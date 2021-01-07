@@ -1,14 +1,10 @@
 import typescript from '@rollup/plugin-typescript'
 import externals from 'rollup-plugin-node-externals'
-// import cleaner from 'rollup-plugin-cleaner'
 import pkg from './package.json'
 
 function getPlugins() {
   return [
-    // cleaner({
-    //   targets: ['./dist/', './lib/'],
-    // }),
-    typescript({}),
+    typescript(),
     externals({
       builtins: true,
       deps: true,

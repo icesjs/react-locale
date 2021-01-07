@@ -1,9 +1,9 @@
 {
   "name": "@ices/react-locale",
-  "version": "1.0.0-alpha",
+  "version": "1.0.1-alpha",
   "description": "React components for locale",
   "main": "dist/index.js",
-  "module": "dist/icefox.esm.js",
+  "module": "dist/index.esm.js",
   "scripts": {
     "types": "rimraf types && tsc -p . -d --emitDeclarationOnly",
     "build": "rimraf dist lib && rollup -c rollup.config.js && yarn types"
@@ -33,7 +33,7 @@
   "peerDependencies": {
     "react": ">=16.8.0"
   },
-  "types": "types",
+  "types": "types/index.d.ts",
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,json,md,yml}": [
       "prettier --write"
