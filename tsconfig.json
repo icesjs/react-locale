@@ -10,11 +10,8 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "noUnusedLocals": true,
-    "removeComments": true,
-    "sourceMap": true,
-    "declaration": true,
-    "declarationDir": "types",
-    "types": ["node"]
+    "removeComments": false,
+    "sourceMap": true
   },
   "include": ["src"]
 }

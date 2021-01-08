@@ -1,24 +1,19 @@
 {
   "name": "@ices/react-locale",
-  "version": "1.0.1-alpha",
+  "version": "1.1.0",
   "description": "React components for locale",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
+  "types": "types/index.d.ts",
+  "sideEffects": false,
   "scripts": {
-    "types": "rimraf types && tsc -p . -d --emitDeclarationOnly",
-    "build": "rimraf dist lib && rollup -c rollup.config.js && yarn types"
-  },
-  "dependencies": {
-    "js-yaml": "^4.0.0",
-    "loader-utils": "^2.0.0"
+    "types": "rimraf types && tsc -p . -d --declarationDir types --emitDeclarationOnly",
+    "build": "rimraf dist && rollup -c rollup.config.js && yarn types"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^8.1.0",
-    "@types/js-yaml": "^4.0.0",
-    "@types/loader-utils": "^2.0.1",
     "@types/node": "^14.14.20",
     "@types/react": "^17.0.0",
-    "@types/webpack": "^4.41.25",
     "builtin-modules": "^3.2.0",
     "husky": "^4.3.7",
     "lint-staged": "^10.5.3",
@@ -33,10 +28,10 @@
   "peerDependencies": {
     "react": ">=16.8.0"
   },
-  "types": "types/index.d.ts",
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,json,md,yml}": [
-      "prettier --write"
+      "prettier --write",
+      "git add ."
     ]
   },
   "husky": {
@@ -69,7 +64,6 @@
   "homepage": "https://github.com/icesjs/react-locale#readme",
   "files": [
     "dist",
-    "lib",
     "types"
   ]
 }

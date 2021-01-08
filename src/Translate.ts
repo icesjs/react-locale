@@ -1,16 +1,16 @@
-import useLocale, { MessageValue } from './hooks'
+import React from 'react'
+import { useLocaleMessage } from './hooks'
 import { MessageDefinitions, PluginFunction } from './message'
 
-interface TranslateProps<PluginArgs> {
+export interface TranslateProps {
   id: string
   fallback?: string
-  plugins?:
-    | PluginFunction<MessageValue, PluginArgs>
-    | PluginFunction<MessageValue, PluginArgs>[]
-    | null
-  data?: PluginArgs | PluginArgs[]
-  definitions?: MessageDefinitions<MessageValue>
+  plugins?: PluginFunction | PluginFunction[] | null
+  data?: any | any[]
+  definitions?: MessageDefinitions
 }
+
+interface TranslateMessageFC extends React.FunctionComponent<TranslateProps> {}
 
 /**
  * 用于获取本地消息内容的函数组件
@@ -21,15 +21,15 @@ interface TranslateProps<PluginArgs> {
  * @param definitions
  * @constructor
  */
-function Translate<PluginArgs>({
+export const TranslateMessage: TranslateMessageFC = ({
   id,
   fallback,
   plugins,
   data,
   definitions,
-}: TranslateProps<PluginArgs>) {
-  const [translate] = useLocale(plugins, fallback, definitions)
-  let args: PluginArgs[]
+}) => {
+  const [translate] = useLocaleMessage(plugins, fallback, definitions)
+  let args
   if (Array.isArray(data)) {
     args = data
   } else if (typeof data !== 'undefined') {
@@ -37,7 +37,18 @@ function Translate<PluginArgs>({
   } else {
     args = []
   }
-  return translate(id, ...args)
+  return /*#__PURE__*/ React.createElement(React.Fragment, null, translate(id, ...args))
 }
 
-export default Translate
+/**
+ * 注入消息定义至转换消息组件。
+ * @param definitions 消息定义数据对象。
+ */
+export function withDefinitionsComponent(definitions: MessageDefinitions) {
+  return function Translate(props: Omit<TranslateProps, 'definitions'>) {
+    return /*#__PURE__*/ React.createElement(
+      TranslateMessage,
+      Object.assign({}, props, { definitions })
+    )
+  }
+}

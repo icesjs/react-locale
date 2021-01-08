@@ -1,21 +1,43 @@
+const hasOwnProperty = Object.prototype.hasOwnProperty
+
+// 格式化后的locale [lang, area]
+type Locale = [string, string]
+// 消息定义
+export type MessageValue = string | number
+export type Message = { [key: string]: MessageValue }
+export type MessageDefinitions = {
+  [locale: string]: Message
+}
+// 插件定义
+export type PluginFunction = (message: MessageValue, args: any[], locale: Locale) => MessageValue
+
+/**
+ * 获取格式化后的语言区域。
+ * @param locale
+ */
+function getLangArea(locale: string): Locale {
+  const [langArea] = locale.split('.')
+  const [lang, area = ''] = langArea.split(/[-_]/)
+  return [lang, area]
+}
+
 /**
  * 根据区域数据过滤消息内容。
- * @param dataList 区域消息数据集。
  * @param key 消息键名。
+ * @param dataList 区域消息数据集。
  * @param preference 首选区域语言。
  */
-function filterMessage<T extends { [key: string]: any }>(
-  dataList: { locale: string; data: T }[],
+function filterMessage(
   key: string,
+  dataList: { locale: string; data: Message }[],
   preference: string
 ) {
-  const hasOwnProperty = Object.prototype.hasOwnProperty
   for (const { locale, data } of dataList) {
     // 数据集要是一个对象，才进行取值
     if (data && typeof data === 'object' && hasOwnProperty.call(data, key)) {
       const message = data[key]
       const type = typeof message
-      if (type !== 'undefined' && type !== 'object') {
+      if (type !== 'undefined' && /string|number|boolean/.test(type)) {
         if (locale !== preference) {
           if (process.env.NODE_ENV === 'development') {
             console.warn(
@@ -30,52 +52,33 @@ function filterMessage<T extends { [key: string]: any }>(
   return null
 }
 
-type Locale = [string, string]
-
-export type MessageDefinitions<T> = {
-  [key: string]: T
-}
-
-export interface PluginFunction<T, V> {
-  (message: T, args: V[], locale: Locale): T
-}
-
-/**
- * 获取格式化后的语言区域。
- * @param locale
- */
-function getLangArea(locale: string) {
-  const [langArea] = locale.split('.')
-  const [lang, area = ''] = langArea.split(/[-_]/)
-  return [lang, area] as Locale
-}
-
 /**
  * 获取区域化的内容。
- * @param options
  * @param key
  * @param args
+ * @param options
  */
-export function getLocaleMessage<T, V>(
+export function getLocaleMessage(
+  key: string,
+  args: any[],
   options: {
     locale: string
     fallback: string
-    plugins: PluginFunction<T, V>[]
-    definitions: MessageDefinitions<T>
-  },
-  key: string,
-  args: V[]
-) {
+    plugins: PluginFunction[]
+    definitions: MessageDefinitions
+  }
+): MessageValue | never {
   const { locale, fallback, plugins, definitions } = options
-  // 尝试取值的locales
+
   const [prefLang, prefArea] = getLangArea(locale)
   const [backLang, backArea] = getLangArea(fallback)
+
   const preference = `${prefLang}${prefArea}`
-  const locales = new Set([preference, prefLang, `${backLang}${backArea}`, backLang])
-  const dataList = [...locales].map((locale) => ({ locale, data: definitions[locale] }))
+  const locales = Array.from(new Set([preference, prefLang, `${backLang}${backArea}`, backLang]))
+  const dataList = locales.map((locale) => ({ locale, data: definitions[locale] }))
 
   // 筛选本土化的消息内容
-  const localizedMessage = filterMessage(dataList, key, preference)
+  const localizedMessage = filterMessage(key, dataList, preference)
   if (localizedMessage) {
     const { locale, message } = localizedMessage
     const langArea = getLangArea(locale)
@@ -86,5 +89,3 @@ export function getLocaleMessage<T, V>(
   // 没有定义message值，抛出错误，提醒开发者修正
   throw new Error(`Unknown localized message with key of "${key}" for [${preference}]`)
 }
-
-export default getLocaleMessage

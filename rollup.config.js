@@ -2,9 +2,8 @@ import typescript from '@rollup/plugin-typescript'
 import externals from 'rollup-plugin-node-externals'
 import pkg from './package.json'
 
-function getPlugins() {
+function getCommonsPlugin() {
   return [
-    typescript(),
     externals({
       builtins: true,
       deps: true,
@@ -16,15 +15,23 @@ function getPlugins() {
 export default [
   {
     input: 'src/index.ts',
-    output: [
-      { file: pkg.module, format: 'es', sourcemap: true },
-      { file: pkg.main, format: 'cjs', sourcemap: true, exports: 'auto' },
+    output: [{ file: pkg.module, format: 'es', sourcemap: true, exports: 'auto' }],
+    plugins: [
+      typescript({
+        removeComments: true,
+      }),
+      ...getCommonsPlugin(),
     ],
-    plugins: getPlugins(),
   },
   {
-    input: 'src/webpack/localeLoader.ts',
-    output: { file: 'lib/locale-loader.js', format: 'cjs', sourcemap: true, exports: 'auto' },
-    plugins: getPlugins(),
+    input: 'src/index.ts',
+    output: { file: pkg.main, format: 'cjs', sourcemap: true, exports: 'auto' },
+    plugins: [
+      typescript({
+        removeComments: true,
+        target: 'es5',
+      }),
+      ...getCommonsPlugin(),
+    ],
   },
 ]
