@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "lib": ["esnext"],
+    "lib": ["esnext", "dom"],
     "module": "esnext",
     "moduleResolution": "node",
     "strict": true,
@@ -11,6 +11,7 @@
     "resolveJsonModule": true,
     "noUnusedLocals": true,
     "removeComments": false,
+    "newLine": "lf",
     "sourceMap": true
   },
   "include": ["src"]

@@ -1,5 +1,3 @@
-import { createContext } from 'react'
-
 // 默认的区域语言设置
 export const DEFAULT_LOCALE = getDefaultLocale(process.env.REACT_APP_DEFAULT_LOCALE)
 // 当前已订阅区域语言变化的处理程序
@@ -14,7 +12,7 @@ function getDefaultLocale(pref: string = 'auto') {
   if (pref !== 'auto') {
     return pref
   }
-  return 'zh'
+  return navigator.language || 'zh'
 }
 
 // 获取当前生效的区域语言
@@ -22,13 +20,23 @@ export function getLocale() {
   return currentLocale
 }
 
+/**
+ * 判断locale值是不是有效的
+ * @param locale
+ */
+export function isValidLocale(locale: any): boolean | never {
+  if (!locale || typeof locale !== 'string') {
+    // 这里还是要检查值的类型，因为不能保证所有使用者都强制开启了ts校验
+    throw new Error('Locale code must be a valid string value')
+  }
+  return true
+}
+
 // 设置当前生效的区域语言
 export function setLocale(locale: string) {
-  if (isUpdating) {
+  if (isUpdating || locale === currentLocale || !isValidLocale(locale)) {
+    // 这里还是要检查值的类型，因为不能保证所有使用者都强制开启了ts校验
     return
-  }
-  if (!locale) {
-    throw new Error('Locale code must be a valid string value')
   }
   try {
     currentLocale = locale
@@ -53,10 +61,3 @@ export function subscribe(handle: Function) {
     consumers.splice(consumers.indexOf(handle), 1)
   }
 }
-
-// 提供给class组件使用的上下文
-export const LocaleContext = createContext({
-  defaultLocale: currentLocale,
-  setLocale,
-})
-LocaleContext.displayName = 'LocaleContext'

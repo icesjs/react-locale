@@ -7,6 +7,7 @@ export interface TranslateProps {
   fallback?: string
   plugins?: PluginFunction | PluginFunction[] | null
   data?: any | any[]
+  contextType?: React.Context<string>
   definitions?: MessageDefinitions
 }
 
@@ -18,6 +19,7 @@ interface TranslateMessageFC extends React.FunctionComponent<TranslateProps> {}
  * @param fallback
  * @param plugins
  * @param data
+ * @param contextType
  * @param definitions
  * @constructor
  */
@@ -26,9 +28,9 @@ export const TranslateMessage: TranslateMessageFC = ({
   fallback,
   plugins,
   data,
+  contextType,
   definitions,
 }) => {
-  const [translate] = useLocaleMessage(plugins, fallback, definitions)
   let args
   if (Array.isArray(data)) {
     args = data
@@ -37,7 +39,8 @@ export const TranslateMessage: TranslateMessageFC = ({
   } else {
     args = []
   }
-  return /*#__PURE__*/ React.createElement(React.Fragment, null, translate(id, ...args))
+  const [translate] = useLocaleMessage(plugins, contextType, fallback, definitions)
+  return React.createElement(React.Fragment, null, translate(id, ...args))
 }
 
 /**
@@ -45,10 +48,15 @@ export const TranslateMessage: TranslateMessageFC = ({
  * @param definitions 消息定义数据对象。
  */
 export function withDefinitionsComponent(definitions: MessageDefinitions) {
-  return function Translate(props: Omit<TranslateProps, 'definitions'>) {
-    return /*#__PURE__*/ React.createElement(
-      TranslateMessage,
-      Object.assign({}, props, { definitions })
-    )
+  return class Translate extends React.PureComponent<
+    Omit<TranslateProps, 'contextType' | 'definitions'>
+  > {
+    contextType?: React.Context<string>
+    render() {
+      return React.createElement(
+        TranslateMessage,
+        Object.assign({}, this.props, { contextType: Translate.contextType, definitions })
+      )
+    }
   }
 }
