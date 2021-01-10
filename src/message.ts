@@ -1,7 +1,10 @@
 const hasOwnProperty = Object.prototype.hasOwnProperty
 
-// 格式化后的locale [lang, area]
-type Locale = [string, string]
+/**
+ * 格式化后的locale [lang, area, lang-area]
+ */
+type Locale = [string, string, string]
+
 // 消息定义
 export type MessageValue = string | number
 export type Message = { [key: string]: MessageValue }
@@ -18,7 +21,7 @@ export type PluginFunction = (message: MessageValue, args: any[], locale: Locale
 function getLangArea(locale: string): Locale {
   const [langArea] = locale.split('.')
   const [lang, area = ''] = langArea.split(/[-_]/)
-  return [lang, area]
+  return [lang, area, `${lang}${area ? '-' + area : ''}`]
 }
 
 /**
@@ -70,11 +73,10 @@ export function getLocaleMessage(
 ): string | never {
   const { locale, fallback, plugins, definitions } = options
 
-  const [prefLang, prefArea] = getLangArea(locale)
-  const [backLang, backArea] = getLangArea(fallback)
+  const [prefLang, , preference] = getLangArea(locale)
+  const [backLang, , backLangArea] = getLangArea(fallback)
 
-  const preference = `${prefLang}${prefArea}`
-  const locales = Array.from(new Set([preference, prefLang, `${backLang}${backArea}`, backLang]))
+  const locales = Array.from(new Set([preference, prefLang, backLangArea, backLang]))
   const dataList = locales.map((locale) => ({ locale, data: definitions[locale] }))
 
   // 筛选本土化的消息内容

@@ -1,18 +1,30 @@
-// 默认的区域语言设置
-export const DEFAULT_LOCALE = process.env.REACT_APP_DEFAULT_LOCALE || 'zh'
-// 当前已订阅区域语言变化的处理程序
-const consumers: Function[] = []
+/**
+ * 首选语言
+ */
+export const DEFAULT_LOCALE =
+  process.env.REACT_APP_DEFAULT_LOCALE || process.env.VUE_APP_DEFAULT_LOCALE || 'zh'
+
+/**
+ * 备选语言
+ */
+export const FALLBACK_LOCALE =
+  process.env.REACT_APP_FALLBACK_LOCALE || process.env.VUE_APP_FALLBACK_LOCALE || 'zh'
+
 // 当前设置的区域语言
-let currentLocale = getCurrentLocale()
+let currentLocale = getCurrentLocale(DEFAULT_LOCALE)
+
 // 标记是否在更新区域语言设置，避免无限循环设置
 let isUpdating = false
 
-// 获取默认的语言区域设置
-function getCurrentLocale(pref: string = 'auto') {
+// 当前已订阅区域语言变化的处理程序
+const consumers: Function[] = []
+
+// 获取系统当前的语言区域设置
+function getCurrentLocale(pref: string) {
   if (pref !== 'auto') {
     return pref
   }
-  return navigator.language || DEFAULT_LOCALE
+  return navigator.language || FALLBACK_LOCALE
 }
 
 // 获取当前生效的区域语言

@@ -1,6 +1,6 @@
 {
   "name": "@ices/react-locale",
-  "version": "1.1.3",
+  "version": "1.2.0",
   "description": "React components for locale",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",

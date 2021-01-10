@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useContext, Context, useMemo } from 'react'
 import { getLocaleMessage, MessageDefinitions, PluginFunction } from './message'
 import {
-  DEFAULT_LOCALE as defaultFallback,
+  FALLBACK_LOCALE as fallbackLocale,
   getLocale as getCurrentLocale,
   setLocale as setContextLocale,
   isValidLocale,
@@ -24,7 +24,7 @@ export type UseLocaleResponse = [
 export function useLocaleMessage(
   plugins: PluginFunction | PluginFunction[] | null = null,
   contextType: Context<string> | null = null,
-  fallback: string = defaultFallback,
+  fallback: string = fallbackLocale,
   definitions: MessageDefinitions = {}
 ): UseLocaleResponse {
   //
