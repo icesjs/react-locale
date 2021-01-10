@@ -11,7 +11,7 @@ export interface TranslateProps {
   definitions?: MessageDefinitions
 }
 
-interface TranslateMessageFC extends React.FunctionComponent<TranslateProps> {}
+export interface TranslateMessageFC extends React.VoidFunctionComponent<TranslateProps> {}
 
 /**
  * 用于获取本地消息内容的函数组件
@@ -43,20 +43,31 @@ export const TranslateMessage: TranslateMessageFC = ({
   return React.createElement(React.Fragment, null, translate(id, ...args))
 }
 
+export abstract class TranslateContextType {
+  static contextType?: React.Context<string>
+}
+
 /**
  * 注入消息定义至转换消息组件。
  * @param definitions 消息定义数据对象。
  */
 export function withDefinitionsComponent(definitions: MessageDefinitions) {
-  return class Translate extends React.PureComponent<
-    Omit<TranslateProps, 'contextType' | 'definitions'>
-  > {
-    contextType?: React.Context<string>
+  return class Translate
+    extends React.PureComponent<Omit<TranslateProps, 'contextType' | 'definitions'>>
+    implements TranslateContextType {
     render() {
-      return React.createElement(
-        TranslateMessage,
-        Object.assign({}, this.props, { contextType: Translate.contextType, definitions })
-      )
+      const { children } = this.props
+      if (children && !(typeof children === 'string' && !children.trim())) {
+        // 存在非空字符串的子组件时，则抛异常，因为子组件不会被渲染
+        throw new Error(
+          'The <Translate> component must be an empty component, but got some children within it.'
+        )
+      }
+      return React.createElement(TranslateMessage, {
+        ...this.props,
+        contextType: Translate.contextType,
+        definitions,
+      })
     }
   }
 }

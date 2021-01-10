@@ -1,18 +1,18 @@
 // 默认的区域语言设置
-export const DEFAULT_LOCALE = getDefaultLocale(process.env.REACT_APP_DEFAULT_LOCALE)
+export const DEFAULT_LOCALE = process.env.REACT_APP_DEFAULT_LOCALE || 'zh'
 // 当前已订阅区域语言变化的处理程序
 const consumers: Function[] = []
 // 当前设置的区域语言
-let currentLocale = DEFAULT_LOCALE
+let currentLocale = getCurrentLocale()
 // 标记是否在更新区域语言设置，避免无限循环设置
 let isUpdating = false
 
 // 获取默认的语言区域设置
-function getDefaultLocale(pref: string = 'auto') {
+function getCurrentLocale(pref: string = 'auto') {
   if (pref !== 'auto') {
     return pref
   }
-  return navigator.language || 'zh'
+  return navigator.language || DEFAULT_LOCALE
 }
 
 // 获取当前生效的区域语言
@@ -27,7 +27,11 @@ export function getLocale() {
 export function isValidLocale(locale: any): boolean | never {
   if (!locale || typeof locale !== 'string') {
     // 这里还是要检查值的类型，因为不能保证所有使用者都强制开启了ts校验
-    throw new Error('Locale code must be a valid string value')
+    throw new Error(
+      `Locale code must be a valid string value. (currType: ${typeof locale} , currValue: ${JSON.stringify(
+        locale
+      )})`
+    )
   }
   return true
 }

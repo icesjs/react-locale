@@ -13,7 +13,6 @@ function getPlugins(format) {
     }),
     typescript({
       removeComments: !isEnvDevelopment,
-      inlineSources: !isEnvDevelopment,
       noUnusedLocals: !isEnvDevelopment,
       target: format === 'es' ? 'esnext' : 'es5',
     }),
@@ -28,7 +27,7 @@ export default [
     output: {
       file: pkg.module,
       format: 'es',
-      sourcemap: true,
+      sourcemap: !isEnvDevelopment || 'inline',
     },
     plugins: getPlugins('es'),
   },
@@ -37,7 +36,7 @@ export default [
     output: {
       file: pkg.main,
       format: 'cjs',
-      sourcemap: true,
+      sourcemap: !isEnvDevelopment || 'inline',
     },
     plugins: getPlugins('cjs'),
   },

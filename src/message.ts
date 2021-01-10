@@ -67,7 +67,7 @@ export function getLocaleMessage(
     plugins: PluginFunction[]
     definitions: MessageDefinitions
   }
-): MessageValue | never {
+): string | never {
   const { locale, fallback, plugins, definitions } = options
 
   const [prefLang, prefArea] = getLangArea(locale)
@@ -83,7 +83,16 @@ export function getLocaleMessage(
     const { locale, message } = localizedMessage
     const langArea = getLangArea(locale)
     // 应用插件列表处理消息内容格式化
-    return plugins.reduce((message, plugin) => plugin(message, [...args], [...langArea]), message)
+    const value = plugins.reduce(
+      (message, plugin) => plugin(message, [...args], [...langArea]),
+      message
+    )
+    if (typeof value !== 'string') {
+      // 插件处理后的内容，只能是字符串或数值类型，如果不是，则强制转换类型为字符串
+      // 也意味着，插件不能够输出一个组件
+      return `${value}`
+    }
+    return value
   }
 
   // 没有定义message值，抛出错误，提醒开发者修正
