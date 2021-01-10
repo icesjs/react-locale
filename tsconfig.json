@@ -5,12 +5,10 @@
     "module": "esnext",
     "moduleResolution": "node",
     "strict": true,
+    "alwaysStrict": true,
     "allowJs": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "noUnusedLocals": true,
-    "removeComments": false,
     "newLine": "lf",
     "sourceMap": true
   },

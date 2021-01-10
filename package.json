@@ -1,29 +1,30 @@
 {
   "name": "@ices/react-locale",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "React components for locale",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "types/index.d.ts",
   "sideEffects": false,
   "scripts": {
-    "dev": "rimraf dist && cross-env NODE_ENV=development rollup -w -c rollup.config.js",
-    "build": "rimraf dist && cross-env NODE_ENV=production rollup -c rollup.config.js && yarn types",
+    "dev": "rimraf dist && rollup -c -w --environment NODE_ENV:development",
+    "build": "rimraf dist && rollup -c --environment NODE_ENV:production && yarn types",
     "types": "rimraf types && tsc -p . -d --declarationDir types --emitDeclarationOnly"
+  },
+  "dependencies": {
+    "tslib": "^2.1.0"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^8.1.0",
     "@types/node": "^14.14.20",
     "@types/react": "^17.0.0",
     "builtin-modules": "^3.2.0",
-    "cross-env": "^7.0.3",
     "husky": "^4.3.7",
     "lint-staged": "^10.5.3",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "rollup": "^2.36.1",
     "rollup-plugin-node-externals": "^2.2.0",
-    "tslib": "^2.1.0",
     "typescript": "^4.1.3"
   },
   "peerDependencies": {
