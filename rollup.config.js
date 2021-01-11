@@ -1,5 +1,6 @@
 import typescript from '@rollup/plugin-typescript'
 import externals from 'rollup-plugin-node-externals'
+import * as cp from 'child_process'
 import pkg from './package.json'
 
 const isEnvDevelopment = process.env.NODE_ENV === 'development'
@@ -16,7 +17,11 @@ function getPlugins(format) {
       noUnusedLocals: !isEnvDevelopment,
       target: format === 'es' ? 'esnext' : 'es5',
     }),
-  ]
+    isEnvDevelopment &&
+      format === 'es' && {
+        generateBundle: () => cp.execSync('yarn types', { stdio: 'ignore' }),
+      },
+  ].filter(Boolean)
 }
 
 const input = 'src/index.ts'

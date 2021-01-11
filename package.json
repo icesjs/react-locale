@@ -1,15 +1,15 @@
 {
   "name": "@ices/react-locale",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "React components for locale",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "types/index.d.ts",
   "sideEffects": false,
   "scripts": {
-    "dev": "rimraf dist && rollup -c -w --environment NODE_ENV:development",
-    "build": "rimraf dist && rollup -c --environment NODE_ENV:production && yarn types",
-    "types": "rimraf types && tsc -p . -d --declarationDir types --emitDeclarationOnly"
+    "dev": "rollup -c -w --environment NODE_ENV:development",
+    "build": "rimraf dist types && rollup -c --environment NODE_ENV:production && yarn types",
+    "types": "tsc -p . -d --declarationDir types --emitDeclarationOnly"
   },
   "dependencies": {
     "tslib": "^2.1.0"
