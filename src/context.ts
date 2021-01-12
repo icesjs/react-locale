@@ -12,7 +12,7 @@ export const FALLBACK_LOCALE = process.env.REACT_APP_FALLBACK_LOCALE || 'zh'
 
 // 当前设置的区域语言
 let currentLocale =
-  DEFAULT_LOCALE !== 'auto' ? DEFAULT_LOCALE : determineLocale('lang', FALLBACK_LOCALE)
+  DEFAULT_LOCALE !== 'auto' ? DEFAULT_LOCALE : determineLocale({ fallbackLocale: FALLBACK_LOCALE })
 
 // 标记是否在更新区域语言设置，避免无限循环设置
 let isUpdating = false
@@ -20,16 +20,18 @@ let isUpdating = false
 // 当前已订阅区域语言变化的监听
 const listeners: { handle: (locale: string) => void; unregister: () => void }[] = []
 
-// 获取当前生效的区域语言
+/**
+ * 获取当前生效的区域语言代码。
+ */
 export function getLocale() {
   return currentLocale
 }
 
 /**
- * 判断locale值是不是有效的
- * @param locale
+ * 校验locale值是不是有效的。如果非有效，则抛出异常。
+ * @param locale 需要校验的值。
  */
-export function isValidLocale(locale: any): boolean | never {
+export function validateLocale(locale: any): boolean | never {
   if (!locale || typeof locale !== 'string') {
     // 这里还是要检查值的类型，因为不能保证所有使用者都强制开启了ts校验
     throw new Error(
@@ -46,8 +48,7 @@ export function isValidLocale(locale: any): boolean | never {
  * @param locale 待设定的区域语言代码。
  */
 export function setLocale(locale: string) {
-  if (isUpdating || locale === currentLocale || !isValidLocale(locale)) {
-    // 这里还是要检查值的类型，因为不能保证所有使用者都强制开启了ts校验
+  if (isUpdating || locale === currentLocale || !validateLocale(locale)) {
     return
   }
   try {

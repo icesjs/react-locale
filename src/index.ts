@@ -1,53 +1,58 @@
-import { withDefinitionsHook, UseLocaleResponse } from './hooks'
-import { withDefinitionsComponent, TranslateComponentProps } from './Translate'
-export { setLocale, getLocale, subscribe } from './context'
-export { withDefinitionsHook, withDefinitionsComponent }
+import { withDefinitionsComponent, TranslateType } from './Translate'
+import {
+  withDefinitionsHook,
+  withDefinitionsContextHook,
+  UseTransType,
+  UseContextTransType,
+} from './hooks'
+import { MessageDefinitions } from './message'
+//
 export * as utils from './utils'
 export * as plugins from './plugins'
+//
+export { setLocale, getLocale, subscribe } from './context'
+export { withDefinitions } from './message'
+export { withDefinitionsHook, withDefinitionsContextHook, UseTransResponse } from './hooks'
+export { withDefinitionsComponent, TranslateType, TranslateType as TransType } from './Translate'
+export { PluginFunction, PluginTranslate, MessageValue, MessageDefinitions } from './message'
+
+/**************************************************************************
+ * API的实际导出是由构建插件@ices/locale-webpack-plugin根据语言定义文件自动生成。 \
+ * 下面导出的常量，仅为自动生成定义声明，请不要直接使用。                          \
+ * 如果需要自己绑定语言模块，可使用 withXxx 方法自行绑定。                        \
+ *************************************************************************/
 
 /**
- * 类型组件内使用的转换组件。
+ * 类型组件内使用的转译组件。
  */
-export type Translate = ReturnType<typeof withDefinitionsComponent>
+export const Trans: TranslateType = withDefinitionsComponent()
 
 /**
- * 类型组件内使用的转换组件，是Translate组件的别名。
+ * Trans组件的别名。
  */
-export type Trans = Translate
+export const Translate: TranslateType = Trans
 
 /**
- * 函数组件内使用的hook，可提供区域语言内容转换。
+ * 函数组件内使用的hook，可提供区域语言内容转译。
  */
-export type useLocale = ReturnType<typeof withDefinitionsHook>
-
-export { UseLocaleResponse, TranslateComponentProps }
-export {
-  PluginFunction,
-  PluginTranslateFunction,
-  Message,
-  MessageValue,
-  MessageDefinitions,
-} from './message'
-
-// 下面定义的常量，仅为生成类型定义文件。
-// 如果需要直接使用这些常量，请用 withXxx 方法进行语言内容绑定，并获取相应方法。
+export const useTrans: UseTransType = withDefinitionsHook()
 
 /**
- * 类型组件内使用的转换组件。
+ * useTrans的别名。
  */
-export const Translate: Translate = withDefinitionsComponent({})
+export const useTranslate: UseTransType = useTrans
 
 /**
- * 类型组件内使用的转换组件，是Translate组件的别名。
+ * 函数组件内使用的绑定至指定上下文组件的内容转译hook。
  */
-export const Trans: Translate = Translate
+export const useContextTrans: UseContextTransType = withDefinitionsContextHook()
 
 /**
- * 函数组件内使用的hook，可提供区域语言内容转换。
+ * useContextTrans的别名。
  */
-export const useLocale: useLocale = withDefinitionsHook({})
+export const useContextTranslate: UseContextTransType = useContextTrans
 
 /**
- * 函数组件内使用的hook，可提供区域语言内容转换。
+ * 语言模块内的消息定义内容。
  */
-export default useLocale
+export const definitions: MessageDefinitions = {}

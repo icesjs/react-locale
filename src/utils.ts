@@ -53,16 +53,26 @@ export function getLocaleFromBrowser() {
 
 /**
  * 根据指定的语言设置参数名，获取系统当前的语言区域设置。
- * @param langKey 查找键名。
- * @param fallback 备选语言。
+ * @param options 配置对象。
  */
-export function determineLocale(langKey?: string, fallback?: string): string {
+export function determineLocale(options: {
+  urlLocaleKey?: string
+  cookieLocaleKey?: string
+  storageLocaleKey?: string
+  fallbackLocale?: string
+}): string {
+  const {
+    urlLocaleKey = 'lang',
+    cookieLocaleKey = 'lang',
+    storageLocaleKey = 'lang',
+    fallbackLocale = 'zh',
+  } = Object.assign({}, options)
   return (
-    getLocaleFromURL(langKey) ||
-    getLocaleFromCookie(langKey) ||
-    getLocaleFromLocalStorage(langKey) ||
+    getLocaleFromURL(urlLocaleKey) ||
+    getLocaleFromCookie(cookieLocaleKey) ||
+    getLocaleFromLocalStorage(storageLocaleKey) ||
     getLocaleFromBrowser() ||
-    fallback
+    fallbackLocale
   )
 }
 
@@ -94,4 +104,22 @@ export function isObject(obj: any) {
  */
 export function hasOwnProperty(obj: any, prop: string) {
   return !(obj === null || obj === undefined) && Object.prototype.hasOwnProperty.call(obj, prop)
+}
+
+/**
+ * 获取插件参数。
+ * 参数如果是一个数组，则会展开，如果不是数组，则会用作为数组元素返回一个新数组。
+ * 如果参数本身是一个数组，则需要使用 [[]] 来传参。
+ * @param args
+ */
+export function formatPluginArgs(args: any) {
+  let pluginArgs
+  if (Array.isArray(args)) {
+    pluginArgs = args
+  } else if (typeof args !== 'undefined') {
+    pluginArgs = [args]
+  } else {
+    pluginArgs = []
+  }
+  return pluginArgs
 }
