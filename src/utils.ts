@@ -55,7 +55,7 @@ export function getLocaleFromBrowser() {
  * 根据指定的语言设置参数名，获取系统当前的语言区域设置。
  * @param options 配置对象。
  */
-export function determineLocale(options: {
+export function determineLocale(options?: {
   urlLocaleKey?: string
   cookieLocaleKey?: string
   storageLocaleKey?: string

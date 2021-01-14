@@ -25,6 +25,7 @@ function getPlugins(format) {
 }
 
 const input = 'src/index.ts'
+const sourcemap = !isEnvDevelopment || 'inline'
 
 export default [
   {
@@ -32,7 +33,7 @@ export default [
     output: {
       file: pkg.module,
       format: 'es',
-      sourcemap: !isEnvDevelopment || 'inline',
+      sourcemap,
     },
     plugins: getPlugins('es'),
   },
@@ -41,7 +42,16 @@ export default [
     output: {
       file: pkg.main,
       format: 'cjs',
-      sourcemap: !isEnvDevelopment || 'inline',
+      sourcemap,
+    },
+    plugins: getPlugins('cjs'),
+  },
+  {
+    input: 'src/loader.ts',
+    output: {
+      file: 'lib/loader.js',
+      format: 'cjs',
+      sourcemap,
     },
     plugins: getPlugins('cjs'),
   },

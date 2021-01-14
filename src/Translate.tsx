@@ -1,6 +1,6 @@
 import React from 'react'
-import { useContextLocaleTrans, useLocaleTrans } from './hooks'
 import { formatPluginArgs } from './utils'
+import { useContextLocaleTrans, useLocaleTrans } from './hooks'
 import { MessageDefinitions, PluginFunction } from './message'
 
 type LocaleTransProps = {

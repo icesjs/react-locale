@@ -1,5 +1,5 @@
-import { MessageValue, PluginFunction } from './message'
 import { hasOwnProperty, isObject } from './utils'
+import { MessageValue, PluginFunction } from './message'
 
 /**
  * 将 { variable } 使用变量数据进行替换。

@@ -26,12 +26,12 @@ export type UseTransResponse = [
 ]
 
 /**
- * useLocale 函数的类型定义。
+ * useTrans 函数的类型定义。
  */
 export type UseTransType = ReturnType<typeof withDefinitionsHook>
 
 /**
- * useContextLocale 函数的类型定义。
+ * UseContextTrans 函数的类型定义。
  */
 export type UseContextTransType = ReturnType<typeof withDefinitionsContextHook>
 

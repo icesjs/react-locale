@@ -2,20 +2,20 @@ import { formatPluginArgs, normalizeLocale, hasOwnProperty } from './utils'
 import { FALLBACK_LOCALE, getLocale } from './context'
 import { placeholder } from './plugins'
 
-/**
- * 语言消息内容的值类型。
- */
-export type MessageValue = string | number
-/**
- * 语言消息内容类型。
- */
-export type Message = { [key: string]: MessageValue }
+type MessageDataValue = string | number | boolean | null
+type MessageData = { [key: string]: MessageDataValue }
+
 /**
  * 语言模块消息内容定义类型。
  */
 export type MessageDefinitions = {
-  [locale: string]: Message
+  [locale: string]: MessageData
 }
+
+/**
+ * 语言消息内容的值类型。
+ */
+export type MessageValue = string | number
 
 /**
  * 插件函数，用来实现语言内容的格式转译。
@@ -32,15 +32,41 @@ export type PluginFunction = (
 export type PluginTranslate = ReturnType<typeof getPluginTranslate>
 
 /**
- * 格式化定义语言消息定义。
- * @param definitions
+ * 判定给定的值是否是一个消息内容的值。
+ * @param obj
  */
-export function normalizeDefinitions(definitions: any): MessageDefinitions {
-  const formattedDefs: MessageDefinitions = {}
-  for (const [key, val] of Object.entries(Object.assign({}, definitions))) {
-    formattedDefs[normalizeLocale(key)[0]] = val as Message
+function isMessageDataValue(obj: any) {
+  return obj === null || /string|number|boolean/.test(typeof obj)
+}
+
+// 转换为数字和字符串类型
+function toMessageValue(val: MessageDataValue): MessageValue {
+  return typeof val === 'number' ? val : `${val}`
+}
+
+/**
+ * 格式化定义语言消息定义。
+ * @param dataSet 语言消息定义内容集
+ */
+export function normalizeDefinitions(dataSet: any): MessageDefinitions {
+  const definitions: MessageDefinitions = {}
+  for (const entry of Object.entries(Object.assign({}, dataSet))) {
+    const [locale, data] = entry as [string, any]
+    if (data === null || typeof data !== 'object') {
+      continue
+    }
+    const localeCode = normalizeLocale(locale)[0]
+    if (!hasOwnProperty(definitions, localeCode)) {
+      definitions[localeCode] = {}
+    }
+    const messageData = definitions[localeCode]
+    for (const [key, val] of Object.entries(data)) {
+      if (isMessageDataValue(val)) {
+        messageData[key] = val as MessageDataValue
+      }
+    }
   }
-  return formattedDefs
+  return definitions
 }
 
 /**
@@ -51,17 +77,12 @@ export function normalizeDefinitions(definitions: any): MessageDefinitions {
  */
 function filterMessage(
   key: string,
-  dataList: { locale: string; data: Message }[],
+  dataList: { locale: string; data: MessageData }[],
   preference: string
 ) {
   for (const { locale, data } of dataList) {
-    // 数据集要是一个对象，才进行取值
-    if (data && hasOwnProperty(data, key)) {
+    if (hasOwnProperty(data, key)) {
       const message = data[key]
-      const type = typeof message
-      if (type === 'undefined' || !/string|number|boolean/.test(type)) {
-        continue
-      }
       if (locale !== preference && process.env.NODE_ENV === 'development') {
         console.warn(
           `Missing message with key of "${key}" for locale [${preference}], using default message of locale [${locale}] as fallback.`
@@ -138,7 +159,7 @@ export function getLocaleMessage(
     // 没有定义message值，抛出错误，提醒开发者修正
     throw new Error(`Unknown localized message with key of "${key}" for [${preference}]`)
   }
-  const { locale: messageLocale, message } = localizedMessage
+  const { locale: messageLocale, message: messageDataValue } = localizedMessage
 
   // 默认添加placeholder插件，用于处理 { var } 变量替换
   // placeholder插件放置在插件列表最后进行处理
@@ -155,7 +176,7 @@ export function getLocaleMessage(
   // 应用插件列表处理消息内容格式化
   const value = appliedPlugins.reduce(
     (message, plugin) => plugin(message, [...pluginArgs], translate),
-    message
+    toMessageValue(messageDataValue)
   )
 
   // 插件处理后的内容，最终强制转换为字符串返回
