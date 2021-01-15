@@ -59,6 +59,10 @@ export function getModuleCode({
     exports.getLocale = runtime.getLocale
     exports.setLocale = runtime.setLocale
     exports.subscribe = runtime.subscribe
+    exports.LocaleContext = runtime.LocaleContext
+    exports.getFallbackLocale = runtime.getFallbackLocale
+    exports.setFallbackLocale = runtime.setFallbackLocale
+    
     exports.plugins = runtime.plugins
     exports.utils = runtime.utils
   `
@@ -88,6 +92,9 @@ export function getModuleExports() {
       withDefinitionsComponent,
       withDefinitionsContextHook,
       withDefinitionsHook,
+      LocaleContext,
+      getFallbackLocale,
+      setFallbackLocale
     } from '@ices/react-locale'
     export default useTrans
   `

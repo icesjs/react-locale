@@ -5,6 +5,7 @@ import {
   setLocale as setContextLocale,
   validateLocale,
   subscribe,
+  setFallbackLocale,
 } from './context'
 
 /**
@@ -16,13 +17,13 @@ export type UseTransResponse = [
    */
   (key: string, ...pluginArgs: any[]) => string,
   /**
-   * 用于变更当前区域语言设置。
-   */
-  typeof setContextLocale,
-  /**
    * 当前已应用的区域语言值。
    */
-  string
+  string,
+  /**
+   * 用于变更当前区域语言设置。
+   */
+  typeof setContextLocale
 ]
 
 /**
@@ -62,7 +63,7 @@ function useLocale(
   // setContextLocale 会推送全局locale状态变更事件
   // 如果是绑定了上下文的组件，其状态值以上下文状态为准
   // 因为没有订阅该状态变更事件，所以也不会响应全局状态变化
-  return [translate, setContextLocale, locale]
+  return [translate, locale, setContextLocale]
 }
 
 /**
@@ -112,9 +113,67 @@ export function useLocaleTrans(
  * @param definitions 消息定义对象。
  */
 export function withDefinitionsHook(definitions?: MessageDefinitions) {
-  return function useTrans(plugins?: PluginFunction | PluginFunction[] | null, fallback?: string) {
+  // 初始化 locale 状态
+  let init = (initLocale?: () => string, initialFallback?: string) => {
+    // 重置为空方法，因为只需要初始化执行一次
+    init = () => {}
+    // 设置初始化值
+    if (typeof initLocale === 'function') {
+      setContextLocale(initLocale())
+    }
+    if (typeof initialFallback === 'string') {
+      setFallbackLocale(initialFallback)
+    }
+  }
+
+  /**
+   * 用于设置初始化locale值。
+   * 一般在切换语言的组件中使用。
+   * @param plugins 当前trans使用的插件列表。
+   * @param initialLocale 初始化的locale值或返回locale值的初始化函数。
+   * @param initialFallback 初始化的备选locale值。
+   */
+  function useTrans(
+    plugins: PluginFunction | PluginFunction[] | null,
+    initialLocale: string | (() => string),
+    initialFallback: string
+  ): UseTransResponse
+  /**
+   * 常规使用的方法。
+   * @param plugins 当前trans使用的插件列表。
+   * @param fallback 当前trans使用的备选语言。
+   */
+  function useTrans(
+    plugins: PluginFunction | PluginFunction[] | null,
+    fallback: string
+  ): UseTransResponse
+  /**
+   * 只使用插件。备选语言使用已初始化设置或默认的值。
+   * @param plugins 当前trans使用的插件列表。
+   */
+  function useTrans(plugins: PluginFunction | PluginFunction[] | null): UseTransResponse
+  /**
+   * 不使用插件。备选语言使用已初始化设置或默认的值。
+   */
+  function useTrans(): UseTransResponse
+  // 方法重载实现
+  function useTrans(...args: any[]): any {
+    const plugins = args[0]
+    let initLocale
+    let initialFallback
+    let fallback
+    if (args.length >= 3) {
+      initLocale = typeof args[1] === 'function' ? args[1] : () => args[1]
+      initialFallback = args[2]
+    } else {
+      fallback = args[1]
+    }
+    // 设置初始化的locale
+    init(initLocale, initialFallback)
+    //
     return useLocaleTrans(plugins, fallback, definitions)
   }
+  return useTrans
 }
 
 /**

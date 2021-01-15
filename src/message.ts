@@ -1,5 +1,5 @@
 import { formatPluginArgs, normalizeLocale, hasOwnProperty } from './utils'
-import { FALLBACK_LOCALE, getLocale } from './context'
+import { getFallbackLocale, getLocale, validateLocale } from './context'
 import { placeholder } from './plugins'
 
 type MessageDataValue = string | number | boolean | null
@@ -200,7 +200,12 @@ export function withDefinitions(
   const definitions = normalizeDefinitions(data)
   // 返回转译函数
   return function translate(key: string, ...pluginArgs: any[]) {
-    const { locale = getLocale(), fallback = FALLBACK_LOCALE, plugins } = Object.assign({}, context)
+    const { locale = getLocale(), fallback = getFallbackLocale(), plugins } = Object.assign(
+      {},
+      context
+    )
+    // 校验fallback是否有效
+    validateLocale(fallback, true)
     let usedPlugins: any[] = Array.isArray(plugins) ? plugins : [plugins]
     usedPlugins = usedPlugins.filter((p) => typeof p === 'function')
     return getLocaleMessage(key, pluginArgs, {

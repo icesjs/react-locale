@@ -32,7 +32,7 @@
     "react": ">=16.8.0"
   },
   "lint-staged": {
-    "**/*.{js,jsx,ts,tsx,json,md,yml}": [
+    "**/*.{js,jsx,ts,tsx,json,yml}": [
       "prettier --write",
       "git add ."
     ]

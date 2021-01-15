@@ -1,24 +1,34 @@
+import React from 'react'
 import { determineLocale } from './utils'
 
-/**
- * 首选语言
- */
-export const DEFAULT_LOCALE = process.env.REACT_APP_DEFAULT_LOCALE || 'zh'
-
-/**
- * 备选语言
- */
-export const FALLBACK_LOCALE = process.env.REACT_APP_FALLBACK_LOCALE || 'zh'
+// 备选语言
+let fallbackLocale: string
+if (process.env.REACT_APP_FALLBACK_LOCALE) {
+  fallbackLocale = process.env.REACT_APP_FALLBACK_LOCALE
+} else {
+  fallbackLocale = 'zh'
+}
 
 // 当前设置的区域语言
-let currentLocale =
-  DEFAULT_LOCALE !== 'auto' ? DEFAULT_LOCALE : determineLocale({ fallbackLocale: FALLBACK_LOCALE })
+let currentLocale: string
+if (process.env.REACT_APP_DEFAULT_LOCALE) {
+  currentLocale = process.env.REACT_APP_DEFAULT_LOCALE
+} else {
+  currentLocale = determineLocale({ fallbackLocale })
+}
 
 // 标记是否在更新区域语言设置，避免无限循环设置
 let isUpdating = false
 
 // 当前已订阅区域语言变化的监听
 const listeners: { handle: (locale: string) => void; unregister: () => void }[] = []
+
+/**
+ * 获取备选区域语言代码。
+ */
+export function getFallbackLocale() {
+  return fallbackLocale
+}
 
 /**
  * 获取当前生效的区域语言代码。
@@ -30,17 +40,30 @@ export function getLocale() {
 /**
  * 校验locale值是不是有效的。如果非有效，则抛出异常。
  * @param locale 需要校验的值。
+ * @param isFallback
  */
-export function validateLocale(locale: any): boolean | never {
+export function validateLocale(locale: any, isFallback?: boolean) {
   if (!locale || typeof locale !== 'string') {
     // 这里还是要检查值的类型，因为不能保证所有使用者都强制开启了ts校验
     throw new Error(
-      `Locale code must be a valid string value. (currType: ${typeof locale} , currValue: ${JSON.stringify(
+      `${
+        isFallback ? 'Fallback locale' : 'Locale'
+      } code must be a valid string value. (currType: ${typeof locale} , currValue: ${JSON.stringify(
         locale
       )})`
     )
   }
-  return true
+}
+
+/**
+ * 设置备选的区域语言代码。
+ * @param locale 待设定的区域语言代码。
+ */
+export function setFallbackLocale(locale: string) {
+  if (locale !== fallbackLocale) {
+    validateLocale(locale, true)
+    fallbackLocale = locale
+  }
 }
 
 /**
@@ -48,12 +71,15 @@ export function validateLocale(locale: any): boolean | never {
  * @param locale 待设定的区域语言代码。
  */
 export function setLocale(locale: string) {
-  if (isUpdating || locale === currentLocale || !validateLocale(locale)) {
+  if (isUpdating || locale === currentLocale) {
     return
   }
+  // 校验值有效性
+  validateLocale(locale)
+  //
   try {
-    currentLocale = locale
     isUpdating = true
+    currentLocale = locale
     for (const { handle } of listeners) {
       handle(locale)
     }
@@ -88,3 +114,9 @@ export function subscribe(handle: (locale: string) => void) {
   }
   return registered.unregister
 }
+
+/**
+ * 可供选用的LocaleContext。
+ */
+export const LocaleContext = React.createContext(currentLocale)
+LocaleContext.displayName = 'LocaleContext'

@@ -10,7 +10,14 @@ import { MessageDefinitions } from './message'
 export * as utils from './utils'
 export * as plugins from './plugins'
 //
-export { setLocale, getLocale, subscribe } from './context'
+export {
+  LocaleContext,
+  setLocale,
+  setFallbackLocale,
+  getLocale,
+  getFallbackLocale,
+  subscribe,
+} from './context'
 export { withDefinitions } from './message'
 export { withDefinitionsHook, withDefinitionsContextHook, UseTransResponse } from './hooks'
 export { withDefinitionsComponent, TranslateType, TranslateType as TransType } from './Translate'

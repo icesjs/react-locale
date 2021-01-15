@@ -26,12 +26,14 @@ module.exports = {
 import React, { useCallback } from 'react'
 import { useTrans } from './lang.yml'
 
-function MyButton() {
-  const [trans, setLocale, locale] = useTrans()
+function ToggleLocaleButton() {
+  const initialLocale = 'zh-CN' // or () => 'zh-CN'
+  const fallback = 'zh'
+  const [trans, locale, setLocale] = useTrans([], initialLocale, fallback)
 
   const toggleLocale = useCallback(() => {
     setLocale(locale === 'en-US' ? 'zh-CN' : 'en-US')
-  }, [locale])
+  }, [locale, setLocale])
 
   return <button onClick={toggleLocale}>{trans('ToggleLocale')}</button>
 }
@@ -40,9 +42,12 @@ function MyButton() {
 ```tsx
 // boo.tsx
 import React from 'react'
-import { Trans, setLocale, getLocale } from './lang.yml'
+import { Trans, setLocale, setFallbackLocale, getLocale } from './lang.yml'
 
-class MyButton extends React.Component<any, any> {
+setLocale('zh-CN')
+setFallbackLocale('zh')
+
+class ToggleLocaleButton extends React.Component<any, any> {
   //
   toggleLocale() {
     setLocale(getLocale() === 'en-US' ? 'zh-CN' : 'en-US')
@@ -99,11 +104,13 @@ import { somePlugin } from './plugins.ts'
 
 function MyButton() {
   const plugins = [somePlugin]
-  // Hooks that not bound a locale context will use the global locale state
-  // You can use some plugins to format localized message
-  // Fallback is the alternate language
-  const [trans, setLocale, locale] = useTrans(plugins, fallback)
-  return <button>{trans('message-key', 'pluginArgOne', 'pluginArgTwo')}</button>
+  const fallback = 'zh'
+  // Hooks that not bind a locale context will use the global locale state
+  // You can use some plugins (optional) to format localized message
+  // Default plugin will process variable placeholder for "{ var }"
+  // Fallback (optional) is the alternate language in this bound trans
+  const [trans] = useTrans(plugins, fallback)
+  return <button>{trans('message-key', { foo: true }, 'pluginArgTwo')}</button>
 }
 
 const LocaleContext = React.createContext(
@@ -116,13 +123,16 @@ const LocaleContext = React.createContext(
 )
 
 function ContextButton() {
-  // You can bound the locale state to some context
+  const plugins = []
+  const fallback = 'zh'
+  // You can bind the locale state to some context
   // Hooks that bound to some locale context will independent of others hook
-  const [trans] = useContextTrans(LocaleContext)
-  return <button>${trans('message-key')}</button>
+  // plugins and fallback are optional args
+  const [trans] = useContextTrans(LocaleContext, plugins, fallback)
+  return <button>{trans('message-key')}</button>
 }
 
-// Bound the context to the Trans Component
+// Bind the context to the Trans Component
 Trans.contextType = LocaleContext
 
 class ContextButtonComponent extends React.Component<any, any> {
@@ -130,9 +140,9 @@ class ContextButtonComponent extends React.Component<any, any> {
     return (
       <LocaleContext.Provider value={'zh-CN'}>
         <button>
-          <Trans id="message-key" plugins={somePlugin} data={['pluginArgOne', 'pluginArgTwo']} />
+          <Trans id="message-key" plugins={somePlugin} data={[{ foo: true }, 'pluginArgTwo']} />
         </button>
-        {/* The Function component ContextButton will bound the locale to the LocaleContext */}
+        {/* The Function component ContextButton will bind the locale to the LocaleContext */}
         <ContextButton />
       </LocaleContext.Provider>
     )
@@ -146,7 +156,8 @@ class ContextButtonComponent extends React.Component<any, any> {
 // You can import a language module for plug-ins
 import { definitions } from './plugin-lang.yml'
 
-export function somePlugin(message, [pluginArgOne, pluginArgTwo], translate) {
+// some plugin
+export function somePlugin(message, [{ foo }, pluginArgTwo], translate) {
   // Plugins can also use the translate function
   return `${message}-processed by ${translate('message-key', definitions)}`
 }
@@ -175,11 +186,11 @@ const TranslateComponent = withDefinitionsComponent(localeData)
 
 # You can use "#include" annotation to "import" other locale module to the current module
 
-# Using quotes( ' or " ) or non-quotes will include files relative to the current module
-
 # -----------------------------------------------------------------------------------------
+# Using quotes( ' or " ) or non-quotes will include files relative to the current module
 # This will merge "./zh-CN.yml" or "./zh-CN.yaml" module to the current module:
 # -----------------------------------------------------------------------------------------
+
 #include zh-CN
 #include ./zh-CN.yml
 #include "zh-CN"
@@ -188,44 +199,51 @@ const TranslateComponent = withDefinitionsComponent(localeData)
 #include 'zh-CN'
 #include './zh-CN'
 #include './zh-CN.yml'
-# -----------------------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------------------
 # This will merge "./dir/index.yml" or "./dir/index.yaml" module to the current module:
 # -----------------------------------------------------------------------------------------
+
 #include dir
 #include "dir"
 #include 'dir'
 #include "./dir"
 #include './dir'
-# -----------------------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------------------
 # Using angle bracket( < > ) will include files from node_modules
-
-# -----------------------------------------------------------------------------------------
 # This will merge "node_modules/foo/boo.yml" or "node_modules/foo/boo.yaml" module to the current module:
 # -----------------------------------------------------------------------------------------
+
 #include <foo/boo>
 #include <foo/boo.yml>
 #include <foo/boo.yaml>
-# -----------------------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------------------
-# Notice!!!
-# -----------------------------------------------------------------------------------------
-# import { Trans as ZhTrans, useTrans as useZhTrans } from './zh.yml'
-# import { Trans as EnTrans, useTrans as useEnTrans } from './en.yml'
-#
-# ZhTrans !== EnTrans
-# useZhTrans !== useEnTrans
-#
-# const [enTrans] = useEnTrans()
-# enTrans('message-key-from-zh.yml')        // throw not found message error
-#
-# <EnTrans id='message-key-from-zh.yml' />  // throw not found message error
-#
-# So, the imported language module is independent of other language modules
-#
+```
+
+## Notice
+
+```tsx
+import { Trans as ZhTrans, useTrans as useZhTrans } from './zh.yml'
+import { Trans as EnTrans, useTrans as useEnTrans } from './en.yml'
+
+console.log(ZhTrans !== EnTrans) // true
+console.log(useZhTrans !== useEnTrans) // true
+
+const [enTrans] = useEnTrans()
+enTrans('message-key-from-zh.yml') // throw not found message error
+
+function Button() {
+  return (
+    <button>
+      {/* throw not found message error */}
+      <EnTrans id="message-key-from-zh.yml" />
+    </button>
+  )
+}
+
+// So, the imported language module is independent of the other language modules
 ```
 
 ## Data Merge
@@ -234,13 +252,13 @@ const TranslateComponent = withDefinitionsComponent(localeData)
 # ----------------------------
 # lang.yml
 # ----------------------------
-#
+
 zh:
   foo: 一些东西
 
 en:
   foo: Something
-#
+   
 # ----------------------------
 # This will be exported like:
 # ----------------------------
@@ -272,16 +290,16 @@ boo: Things
 # ----------------------------
 # lang.yml
 # ----------------------------
-#
+
 #include zh
 #include en-US
-#
+
 zh:
   boo: 另一些东西
 
 en:
   boo: Another thing
-#
+
 # ----------------------------
 # This will be exported like:
 # ----------------------------
