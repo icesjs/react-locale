@@ -20,7 +20,7 @@ export {
 } from './context'
 export { withDefinitions } from './message'
 export { withDefinitionsHook, withDefinitionsContextHook, UseTransResponse } from './hooks'
-export { withDefinitionsComponent, TranslateType, TranslateType as TransType } from './Translate'
+export { withDefinitionsComponent, TranslateType } from './Translate'
 export { PluginFunction, PluginTranslate, MessageValue, MessageDefinitions } from './message'
 
 /**************************************************************************
@@ -35,29 +35,14 @@ export { PluginFunction, PluginTranslate, MessageValue, MessageDefinitions } fro
 export const Trans: TranslateType = withDefinitionsComponent()
 
 /**
- * Trans组件的别名。
- */
-export const Translate: TranslateType = Trans
-
-/**
  * 函数组件内使用的hook，可提供区域语言内容转译。
  */
 export const useTrans: UseTransType = withDefinitionsHook()
 
 /**
- * useTrans的别名。
- */
-export const useTranslate: UseTransType = useTrans
-
-/**
  * 函数组件内使用的绑定至指定上下文组件的内容转译hook。
  */
 export const useContextTrans: UseContextTransType = withDefinitionsContextHook()
-
-/**
- * useContextTrans的别名。
- */
-export const useContextTranslate: UseContextTransType = useContextTrans
 
 /**
  * 语言模块内的消息定义内容。

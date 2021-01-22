@@ -6,7 +6,9 @@ import {
   validateLocale,
   subscribe,
   setFallbackLocale,
+  getFallbackLocale,
 } from './context'
+import { normalizeLocale } from './utils'
 
 /**
  * useTrans 或 useContextTrans 的返回值类型。
@@ -36,30 +38,77 @@ export type UseTransType = ReturnType<typeof withDefinitionsHook>
  */
 export type UseContextTransType = ReturnType<typeof withDefinitionsContextHook>
 
+// 转译上下文数据
+type TranslateContext = {
+  locale: string
+  plugins?: PluginFunction | PluginFunction[] | null
+  fallback?: string
+}
+
 /**
  * 使用语言消息内容转译函数。
  * @param locale 当前应用的区域语言代码。
- * @param definitions 语言消息内容定义对象。
+ * @param definitions 语言消息内容定义对象，或者一个用于获取内容的的函数。
  * @param plugins 使用到的插件或插件列表。
  * @param fallback 备选区域语言代码。默认值为全局备选区域语言代码。
  */
 function useLocale(
   locale: string,
-  definitions?: MessageDefinitions,
+  definitions?: MessageDefinitions | ((locale: string) => Promise<MessageDefinitions>),
   plugins?: PluginFunction | PluginFunction[] | null,
   fallback?: string
 ): UseTransResponse {
+  // 如果是已经加载了的locale数据，则loadData会保证其数据对象引用不会变
+  // 只有当存在新的locale数据加载时，loadData才会返回一个新的对象
+  // 数据对象中，包含所有绑定至当前模块的已经加载了的locale数据
+  const loadData = typeof definitions === 'function' ? definitions : null
+
+  const [data, setData] = useState(() => definitions)
+
+  if (fallback) {
+    const original = fallback
+    ;[fallback] = normalizeLocale(fallback)
+    validateLocale(fallback, true, original)
+  }
+
+  let loadTask: (Promise<MessageDefinitions> | null)[] = []
+  if (typeof loadData === 'function') {
+    fallback = fallback || getFallbackLocale()
+    loadTask = [
+      // 需要加载 locale 数据
+      !data || typeof data === 'function' || !data[locale] ? loadData(locale) : null,
+      // 需要加载 fallback 数据
+      fallback && fallback !== locale && (!data || typeof data === 'function' || !data[fallback])
+        ? loadData(fallback)
+        : null,
+    ]
+
+    if (loadTask[0] || loadTask[1]) {
+      Promise.all(loadTask.filter(Boolean)).then((res) =>
+        setData(Object.assign({}, res[0], res[1]))
+      )
+    }
+  }
+
   // 创建一个转译上下文，以及绑定上下文转译函数
   // 这个上下文对象，需要保持引用不变，所以使用memo缓存起来
-  const transContext = useMemo(() => ({}), [])
+  const transContext = useMemo(() => ({} as TranslateContext), [])
   // 转译函数使用的数据如果发生了变化，则重新生成转译函数
-  const translate = useMemo(() => withDefinitions(definitions, transContext), [definitions])
-  // 根据当前参数，设置转译上下文属性值
-  Object.assign(transContext, {
-    locale,
-    fallback,
-    plugins,
-  })
+  const translate = useMemo(() => withDefinitions(data, transContext), [data])
+
+  // 同步插件
+  transContext.plugins = plugins
+
+  // 如果需要加载当前语言数据，则内部上下文的值暂时保持不变
+  if (!loadTask[0] || !transContext.locale) {
+    // transContext.locale 如果没有值，表示是初次运行hook
+    transContext.locale = locale
+  }
+  if (!loadTask[1] || !transContext.fallback) {
+    // transContext.fallback 如果没有值，表示是初次运行hook
+    transContext.fallback = fallback
+  }
+
   // setContextLocale 会推送全局locale状态变更事件
   // 如果是绑定了上下文的组件，其状态值以上下文状态为准
   // 因为没有订阅该状态变更事件，所以也不会响应全局状态变化
@@ -81,12 +130,15 @@ export function useContextLocaleTrans(
 ) {
   // 这里locale状态从上下文中获取
   const locale = useContext(contextType)
+  const [localeCode] = normalizeLocale(locale)
+
   // 这里校验上下文组件提供的值
   // 校验值是因为，上下文组件可以任意设置其值类型，并不能保证提供的值是有效的区域语言代码字符串
   // 如果校验不通过，会抛出异常
-  validateLocale(locale)
+  validateLocale(localeCode, false, locale)
+
   // 使用转译函数
-  return useLocale(locale, definitions, plugins, fallback)
+  return useLocale(localeCode, definitions, plugins, fallback)
 }
 
 /**

@@ -3,7 +3,7 @@
  * @param str 待转义的字符序列。
  */
 export function escapeRegExpCharacters(str: string): string {
-  return str.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d')
+  return str.replace(/[|/\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d')
 }
 
 /**
@@ -61,19 +61,34 @@ export function determineLocale(options?: {
   storageLocaleKey?: string
   fallbackLocale?: string
 }): string {
+  let defaultKey = process.env.REACT_APP_LANG_QUERY_KEY
+  if (!defaultKey || typeof (defaultKey as any) !== 'string') {
+    defaultKey = 'lang'
+  }
   const {
-    urlLocaleKey = 'lang',
-    cookieLocaleKey = 'lang',
-    storageLocaleKey = 'lang',
-    fallbackLocale = 'zh',
+    urlLocaleKey = defaultKey,
+    cookieLocaleKey = defaultKey,
+    storageLocaleKey = defaultKey,
+    fallbackLocale,
   } = Object.assign({}, options)
-  return (
-    getLocaleFromURL(urlLocaleKey) ||
-    getLocaleFromCookie(cookieLocaleKey) ||
-    getLocaleFromLocalStorage(storageLocaleKey) ||
-    getLocaleFromBrowser() ||
-    fallbackLocale
-  )
+  for (const getLocale of [
+    () => getLocaleFromURL(urlLocaleKey),
+    () => getLocaleFromCookie(cookieLocaleKey),
+    () => getLocaleFromLocalStorage(storageLocaleKey),
+    () => getLocaleFromBrowser(),
+  ]) {
+    const [locale] = normalizeLocale(getLocale())
+    if (locale) {
+      return locale
+    }
+  }
+  if (fallbackLocale) {
+    const [fallback] = normalizeLocale(fallbackLocale)
+    if (fallback) {
+      return fallback
+    }
+  }
+  return ''
 }
 
 /**
@@ -82,6 +97,9 @@ export function determineLocale(options?: {
  * @return [lang-AREA, lang, AREA]
  */
 export function normalizeLocale(locale: string): [string, string, string] {
+  if (typeof (locale as any) !== 'string') {
+    locale = ''
+  }
   const [langArea] = locale.split('.')
   const [lang, area = ''] = langArea.split(/[-_]/)
   const lowerLang = lang.toLowerCase()

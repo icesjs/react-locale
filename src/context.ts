@@ -1,19 +1,24 @@
 import React from 'react'
-import { determineLocale } from './utils'
+import { determineLocale, normalizeLocale } from './utils'
+
+const ENV_LOCALE = process.env.REACT_APP_DEFAULT_LOCALE
+const ENV_FALLBACK = process.env.REACT_APP_FALLBACK_LOCALE
 
 // 备选语言
-let fallbackLocale: string
-if (process.env.REACT_APP_FALLBACK_LOCALE) {
-  fallbackLocale = process.env.REACT_APP_FALLBACK_LOCALE
-} else {
+let fallbackLocale: string = ''
+if (ENV_FALLBACK) {
+  ;[fallbackLocale] = normalizeLocale(ENV_FALLBACK)
+}
+if (!fallbackLocale) {
   fallbackLocale = 'zh'
 }
 
 // 当前设置的区域语言
-let currentLocale: string
-if (process.env.REACT_APP_DEFAULT_LOCALE) {
-  currentLocale = process.env.REACT_APP_DEFAULT_LOCALE
-} else {
+let currentLocale: string = ''
+if (ENV_LOCALE) {
+  ;[currentLocale] = normalizeLocale(ENV_LOCALE)
+}
+if (!currentLocale) {
   currentLocale = determineLocale({ fallbackLocale })
 }
 
@@ -40,16 +45,17 @@ export function getLocale() {
 /**
  * 校验locale值是不是有效的。如果非有效，则抛出异常。
  * @param locale 需要校验的值。
- * @param isFallback
+ * @param isFallback 是否是fallback语言
+ * @param original 原来的值
  */
-export function validateLocale(locale: any, isFallback?: boolean) {
+export function validateLocale(locale: any, isFallback?: boolean, original = locale) {
   if (!locale || typeof locale !== 'string') {
     // 这里还是要检查值的类型，因为不能保证所有使用者都强制开启了ts校验
     throw new Error(
       `${
         isFallback ? 'Fallback locale' : 'Locale'
-      } code must be a valid string value. (currType: ${typeof locale} , currValue: ${JSON.stringify(
-        locale
+      } code must be a valid string value. (currType: ${typeof original} , currValue: ${JSON.stringify(
+        original
       )})`
     )
   }
@@ -61,8 +67,9 @@ export function validateLocale(locale: any, isFallback?: boolean) {
  */
 export function setFallbackLocale(locale: string) {
   if (locale !== fallbackLocale) {
-    validateLocale(locale, true)
-    fallbackLocale = locale
+    const [localeCode] = normalizeLocale(locale)
+    validateLocale(localeCode, true, locale)
+    fallbackLocale = localeCode
   }
 }
 
@@ -74,14 +81,15 @@ export function setLocale(locale: string) {
   if (isUpdating || locale === currentLocale) {
     return
   }
+  const [localeCode] = normalizeLocale(locale)
   // 校验值有效性
-  validateLocale(locale)
+  validateLocale(localeCode, false, locale)
   //
   try {
     isUpdating = true
-    currentLocale = locale
+    currentLocale = localeCode
     for (const { handle } of listeners) {
-      handle(locale)
+      handle(localeCode)
     }
   } catch (e) {
     throw e

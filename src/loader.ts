@@ -17,13 +17,13 @@ export function getModuleCode({
     /** ${resourcePath} **/
     import definitions from ${module}
     import { withDefinitionsComponent, withDefinitionsHook, withDefinitionsContextHook } from ${runtime}
-    export * from ${runtime}
     export const Trans = withDefinitionsComponent(definitions)
-    export const Translate = Trans
     export const useTrans = withDefinitionsHook(definitions)
-    export const useTranslate = useTrans
     export const useContextTrans = withDefinitionsContextHook(definitions)
-    export const useContextTranslate = useContextTrans
+    export {
+      setLocale, getLocale, setFallbackLocale, getFallbackLocale,
+      LocaleContext, subscribe, plugins, utils 
+    } from ${runtime}
     export { definitions, useTrans as default }
   `
     : `
@@ -31,38 +31,22 @@ export function getModuleCode({
     const definitions = require(${module})
     const runtime = require(${runtime})
     const { withDefinitionsComponent, withDefinitionsHook, withDefinitionsContextHook } = runtime
+    const Trans = withDefinitionsComponent(definitions)
+    const useTrans = withDefinitionsHook(definitions)
+    const useContextTrans = withDefinitionsContextHook(definitions)
     
     Object.defineProperty(exports, '__esModule', { value: true });
-    
-    const Trans = withDefinitionsComponent(definitions)
-    const Translate = Trans
-    const useTrans = withDefinitionsHook(definitions)
-    const useTranslate = useTrans
-    const useContextTrans = withDefinitionsContextHook(definitions)
-    const useContextTranslate = useContextTrans
-    
     exports.default = useTrans
     exports.definitions = definitions
-    
     exports.Trans = Trans
-    exports.Translate = Translate
     exports.useTrans = useTrans
-    exports.useTranslate = useTranslate
     exports.useContextTrans = useContextTrans
-    exports.useContextTranslate = useContextTranslate
-    
-    exports.withDefinitionsComponent = withDefinitionsComponent
-    exports.withDefinitionsHook = withDefinitionsHook
-    exports.withDefinitionsContextHook = withDefinitionsContextHook
-    
-    exports.withDefinitions = runtime.withDefinitions
     exports.getLocale = runtime.getLocale
     exports.setLocale = runtime.setLocale
-    exports.subscribe = runtime.subscribe
-    exports.LocaleContext = runtime.LocaleContext
     exports.getFallbackLocale = runtime.getFallbackLocale
     exports.setFallbackLocale = runtime.setFallbackLocale
-    
+    exports.LocaleContext = runtime.LocaleContext
+    exports.subscribe = runtime.subscribe
     exports.plugins = runtime.plugins
     exports.utils = runtime.utils
   `
@@ -74,28 +58,11 @@ export function getModuleCode({
  */
 export function getModuleExports() {
   return `
-    import { useTrans } from '@ices/react-locale'
     export {
-      Trans,
-      Translate,
-      definitions,
-      getLocale,
-      plugins,
-      setLocale,
-      subscribe,
-      useContextTrans,
-      useContextTranslate,
-      useTrans,
-      useTranslate,
-      utils,
-      withDefinitions,
-      withDefinitionsComponent,
-      withDefinitionsContextHook,
-      withDefinitionsHook,
-      LocaleContext,
-      getFallbackLocale,
-      setFallbackLocale
+      Trans, useTrans, useContextTrans, definitions,
+      setLocale, getLocale, setFallbackLocale, getFallbackLocale,
+      LocaleContext, subscribe, plugins, utils,
+      useTrans as default
     } from '@ices/react-locale'
-    export default useTrans
   `
 }

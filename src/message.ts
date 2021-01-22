@@ -1,5 +1,5 @@
 import { formatPluginArgs, normalizeLocale, hasOwnProperty } from './utils'
-import { getFallbackLocale, getLocale, validateLocale } from './context'
+import { getFallbackLocale, getLocale } from './context'
 import { placeholder } from './plugins'
 
 type MessageDataValue = string | number | boolean | null
@@ -84,9 +84,12 @@ function filterMessage(
     if (hasOwnProperty(data, key)) {
       const message = data[key]
       if (locale !== preference && process.env.NODE_ENV === 'development') {
-        console.warn(
-          `Missing message with key of "${key}" for locale [${preference}], using default message of locale [${locale}] as fallback.`
-        )
+        const suspendWarning = process.env.REACT_APP_SUSPEND_LOCALE_WARNING
+        if (!suspendWarning || suspendWarning === 'false') {
+          console.warn(
+            `Missing message with key of "${key}" for locale [${preference}], using default message of locale [${locale}] as fallback.`
+          )
+        }
       }
       return { locale, message }
     }
@@ -190,13 +193,17 @@ export function getLocaleMessage(
  * @param context 需要绑定的上下文对象。
  */
 export function withDefinitions(
-  data?: MessageDefinitions,
+  data?: MessageDefinitions | Function,
   context?: {
     locale?: string
     fallback?: string
     plugins?: PluginFunction | PluginFunction[] | null
   }
 ) {
+  if (typeof data === 'function') {
+    // 数据还未加载，返回空字符串的转译函数（或者返回一个loading??）
+    return () => ''
+  }
   const definitions = normalizeDefinitions(data)
   // 返回转译函数
   return function translate(key: string, ...pluginArgs: any[]) {
@@ -204,8 +211,6 @@ export function withDefinitions(
       {},
       context
     )
-    // 校验fallback是否有效
-    validateLocale(fallback, true)
     let usedPlugins: any[] = Array.isArray(plugins) ? plugins : [plugins]
     usedPlugins = usedPlugins.filter((p) => typeof p === 'function')
     return getLocaleMessage(key, pluginArgs, {
