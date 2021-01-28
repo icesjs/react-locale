@@ -62,7 +62,9 @@ export function getModuleExports() {
       Trans, useTrans, useContextTrans, definitions,
       setLocale, getLocale, setFallbackLocale, getFallbackLocale,
       LocaleContext, subscribe, plugins, utils,
-      useTrans as default
+      useTrans as default,
+      UseTransResponse, TranslateType, PluginFunction,
+      PluginTranslate, MessageValue, MessageDefinitions
     } from '@ices/react-locale'
   `
 }
