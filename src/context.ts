@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import { determineLocale, normalizeLocale } from './utils'
 
 const ENV_LOCALE = process.env.REACT_APP_DEFAULT_LOCALE

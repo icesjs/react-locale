@@ -1,19 +1,19 @@
 {
   "name": "@ices/react-locale",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "React components for locale",
-  "main": "dist/index.js",
-  "module": "dist/index.esm.js",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.js",
   "loader": "lib/loader.js",
   "types": "types/index.d.ts",
   "sideEffects": false,
   "scripts": {
     "dev": "rollup -c -w --environment NODE_ENV:development",
-    "build": "rimraf dist lib types && rollup -c --environment NODE_ENV:production && yarn types",
+    "build": "rimraf dist lib types && rollup -c --environment NODE_ENV:production",
     "types": "tsc -p . -d --declarationDir types --emitDeclarationOnly"
   },
   "dependencies": {
-    "tslib": "^2.1.0"
+    "tslib": "^2.0.0"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^8.1.0",

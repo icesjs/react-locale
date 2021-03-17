@@ -1,4 +1,4 @@
-import { formatPluginArgs, normalizeLocale, hasOwnProperty } from './utils'
+import { formatPluginArgs, hasOwnProperty, normalizeLocale } from './utils'
 import { getFallbackLocale, getLocale } from './context'
 import { placeholder } from './plugins'
 
@@ -193,26 +193,23 @@ export function getLocaleMessage(
  * @param context 需要绑定的上下文对象。
  */
 export function withDefinitions(
-  data?: MessageDefinitions | Function,
-  context?: {
-    locale?: string
+  data: MessageDefinitions | null,
+  context: {
+    locale: string
     fallback?: string
     plugins?: PluginFunction | PluginFunction[] | null
   }
 ) {
-  if (typeof data === 'function') {
+  if (data === null) {
     // 数据还未加载，返回空字符串的转译函数（或者返回一个loading??）
     return () => ''
   }
   const definitions = normalizeDefinitions(data)
   // 返回转译函数
   return function translate(key: string, ...pluginArgs: any[]) {
-    const { locale = getLocale(), fallback = getFallbackLocale(), plugins } = Object.assign(
-      {},
-      context
-    )
+    const { locale = getLocale(), fallback = getFallbackLocale(), plugins } = context
     let usedPlugins: any[] = Array.isArray(plugins) ? plugins : [plugins]
-    usedPlugins = usedPlugins.filter((p) => typeof p === 'function')
+    usedPlugins = usedPlugins.filter((plugin) => typeof plugin === 'function')
     return getLocaleMessage(key, pluginArgs, {
       locale,
       fallback,

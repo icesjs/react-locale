@@ -1,9 +1,9 @@
-import { withDefinitionsComponent, TranslateType } from './Translate'
+import { TranslateType, withDefinitionsComponent } from './Translate'
 import {
-  withDefinitionsHook,
-  withDefinitionsContextHook,
-  UseTransType,
   UseContextTransType,
+  UseTransType,
+  withDefinitionsContextHook,
+  withDefinitionsHook,
 } from './hooks'
 import { MessageDefinitions } from './message'
 //
@@ -18,7 +18,6 @@ export {
   getFallbackLocale,
   subscribe,
 } from './context'
-export { withDefinitions } from './message'
 export { withDefinitionsHook, withDefinitionsContextHook, UseTransResponse } from './hooks'
 export { withDefinitionsComponent, TranslateType } from './Translate'
 export { PluginFunction, PluginTranslate, MessageValue, MessageDefinitions } from './message'

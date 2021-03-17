@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "lib": ["esnext", "dom"],
+    "target": "es5",
+    "lib": ["es2015", "dom"],
     "module": "esnext",
     "moduleResolution": "node",
+    "importHelpers": true,
     "strict": true,
     "alwaysStrict": true,
     "allowJs": false,
@@ -12,6 +13,7 @@
     "newLine": "lf",
     "sourceMap": true,
     "inlineSources": true,
+    "removeComments": false,
     "jsx": "react"
   },
   "include": ["src"]

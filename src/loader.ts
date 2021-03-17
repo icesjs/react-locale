@@ -12,28 +12,29 @@ export function getModuleCode({
   resourcePath: string
 }) {
   const runtime = JSON.stringify('@ices/react-locale')
+  const request = JSON.stringify(module)
   return esModule
     ? `
     /** ${resourcePath} **/
-    import definitions from ${module}
+    import definitions from ${request}
     import { withDefinitionsComponent, withDefinitionsHook, withDefinitionsContextHook } from ${runtime}
-    export const Trans = withDefinitionsComponent(definitions)
-    export const useTrans = withDefinitionsHook(definitions)
-    export const useContextTrans = withDefinitionsContextHook(definitions)
+    var Trans = withDefinitionsComponent(definitions)
+    var useTrans = withDefinitionsHook(definitions)
+    var useContextTrans = withDefinitionsContextHook(definitions)
     export {
       setLocale, getLocale, setFallbackLocale, getFallbackLocale,
       LocaleContext, subscribe, plugins, utils 
     } from ${runtime}
-    export { definitions, useTrans as default }
+    export { definitions, useTrans as default, Trans, useTrans, useContextTrans }
   `
     : `
     /** ${resourcePath} **/
-    const definitions = require(${module})
-    const runtime = require(${runtime})
-    const { withDefinitionsComponent, withDefinitionsHook, withDefinitionsContextHook } = runtime
-    const Trans = withDefinitionsComponent(definitions)
-    const useTrans = withDefinitionsHook(definitions)
-    const useContextTrans = withDefinitionsContextHook(definitions)
+    var definitions = require(${request})
+    var runtime = require(${runtime})
+    var { withDefinitionsComponent, withDefinitionsHook, withDefinitionsContextHook } = runtime
+    var Trans = withDefinitionsComponent(definitions)
+    var useTrans = withDefinitionsHook(definitions)
+    var useContextTrans = withDefinitionsContextHook(definitions)
     
     Object.defineProperty(exports, '__esModule', { value: true });
     exports.default = useTrans

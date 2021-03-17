@@ -1,11 +1,39 @@
+import cp from 'child_process'
+import path from 'path'
+import fs from 'fs'
 import typescript from '@rollup/plugin-typescript'
 import externals from 'rollup-plugin-node-externals'
-import * as cp from 'child_process'
 import pkg from './package.json'
 
 const isEnvDevelopment = process.env.NODE_ENV === 'development'
+const input = 'src/index.ts'
+const sourcemap = !isEnvDevelopment || 'inline'
 
-function getPlugins(format) {
+function ensureDir(filePath) {
+  const unExistsDirs = []
+  let file = filePath
+  while (!fs.existsSync((file = path.dirname(file)))) {
+    unExistsDirs.unshift(file)
+  }
+  for (const dir of unExistsDirs) {
+    fs.mkdirSync(dir)
+  }
+}
+
+function makeTypesFile() {
+  cp.execSync('yarn types', { stdio: 'ignore' })
+  const paths = ['types/loader.d.ts']
+  for (const p of paths) {
+    const file = path.resolve(p)
+    if (fs.existsSync(file)) {
+      const target = path.resolve(p.replace(/^types\//, 'lib/'))
+      ensureDir(target)
+      fs.renameSync(file, target)
+    }
+  }
+}
+
+function getPlugins(format, target = 'es5', makeTypes = false) {
   return [
     externals({
       builtins: true,
@@ -13,19 +41,16 @@ function getPlugins(format) {
       peerDeps: true,
     }),
     typescript({
-      removeComments: !isEnvDevelopment,
+      removeComments: true,
       noUnusedLocals: !isEnvDevelopment,
-      target: format === 'es' ? 'esnext' : 'es5',
+      target,
     }),
-    isEnvDevelopment &&
-      format === 'es' && {
-        generateBundle: () => cp.execSync('yarn types', { stdio: 'ignore' }),
-      },
+    makeTypes && {
+      name: 'make-types',
+      generateBundle: makeTypesFile,
+    },
   ].filter(Boolean)
 }
-
-const input = 'src/index.ts'
-const sourcemap = !isEnvDevelopment || 'inline'
 
 export default [
   {
@@ -36,6 +61,15 @@ export default [
       sourcemap,
     },
     plugins: getPlugins('es'),
+  },
+  {
+    input,
+    output: {
+      file: pkg.module.replace(/\.js$/, '.es.js'),
+      format: 'es',
+      sourcemap,
+    },
+    plugins: getPlugins('es', 'es6'),
   },
   {
     input,
@@ -53,6 +87,6 @@ export default [
       format: 'cjs',
       sourcemap,
     },
-    plugins: getPlugins('cjs'),
+    plugins: getPlugins('cjs', 'es6', true),
   },
 ]

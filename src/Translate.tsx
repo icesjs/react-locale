@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import { formatPluginArgs } from './utils'
 import { useContextLocaleTrans, useLocaleTrans } from './hooks'
 import { MessageDefinitions, PluginFunction } from './message'
