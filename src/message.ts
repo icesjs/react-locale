@@ -83,9 +83,12 @@ function filterMessage(
   for (const { locale, data } of dataList) {
     if (hasOwnProperty(data, key)) {
       const message = data[key]
-      console.warn(
-        `Missing message with key of "${key}" for locale [${preference}], using default message of locale [${locale}] as fallback.`
-      )
+      // @ts-ignore
+      if (locale !== preference && !window.__suspendReactLocaleWarning) {
+        console.warn(
+          `Missing message with key of "${key}" for locale [${preference}], using default message of locale [${locale}] as fallback.`
+        )
+      }
       return { locale, message }
     }
   }

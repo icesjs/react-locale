@@ -317,3 +317,12 @@ en:
 #     }
 #  }
 ```
+
+## Suspend Console Warning
+
+When a fallback language is used, a warning message is printed on the console, which you can disable it like this:
+
+```javascript
+window.__suspendReactLocaleWarning = true
+```
+
