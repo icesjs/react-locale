@@ -51,13 +51,13 @@ function fetchLocaleData(
 
 /**
  * 使用语言消息内容转译函数。
- * @param locale 当前应用的区域语言代码。
+ * @param expectedLocale 当前应用的区域语言代码。
  * @param definitions 语言消息内容定义对象，或者一个用于获取内容的的函数。
  * @param plugins 使用到的插件或插件列表。
  * @param fallback 备选区域语言代码。默认值为全局备选区域语言代码。
  */
 function useLocale(
-  locale: string,
+  expectedLocale: string,
   definitions?: MessageDefinitions | ((locale: string) => Promise<MessageDefinitions>),
   plugins?: PluginFunction | PluginFunction[] | null,
   fallback?: string
@@ -68,13 +68,13 @@ function useLocale(
     }
     return null
   })
-
+  const [locale, setLocale] = useState(() => expectedLocale)
+  //
   const fallbackLocale = useMemo(() => {
     if (fallback) {
-      const original = fallback
-      const [fallbackLocale] = normalizeLocale(fallback)
-      validateLocale(fallbackLocale, true, original)
-      return fallbackLocale
+      const [normalizedFallback] = normalizeLocale(fallback)
+      validateLocale(normalizedFallback, true, fallback)
+      return normalizedFallback
     }
     return getFallbackLocale()
   }, [fallback])
@@ -85,14 +85,21 @@ function useLocale(
 
   useEffect(() => {
     if (typeof definitions === 'function') {
-      fetchLocaleData(locale, fallbackLocale, definitions).then(setData)
+      // 异步更新语言数据
+      fetchLocaleData(expectedLocale, fallbackLocale, definitions).then((data) => {
+        if (expectedLocale === getGlobalLocale()) {
+          setData(data)
+          setLocale(expectedLocale)
+        }
+      })
     } else {
-      // 如果数据定义发生了变化，这里重设数据初始值进行更新
+      // 同步更新
       setData(definitions || null)
+      setLocale(expectedLocale)
     }
-  }, [definitions, locale, fallbackLocale, setData])
+  }, [definitions, expectedLocale, fallbackLocale])
 
-  return [translate, locale, setContextLocale]
+  return [translate, expectedLocale, setContextLocale]
 }
 
 /**
