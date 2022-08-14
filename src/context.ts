@@ -1,26 +1,11 @@
 import * as React from 'react'
 import { determineLocale, normalizeLocale } from './utils'
 
-const ENV_LOCALE = process.env.REACT_APP_DEFAULT_LOCALE
-const ENV_FALLBACK = process.env.REACT_APP_FALLBACK_LOCALE
-
 // 备选语言
-let fallbackLocale: string = ''
-if (ENV_FALLBACK) {
-  ;[fallbackLocale] = normalizeLocale(ENV_FALLBACK)
-}
-if (!fallbackLocale) {
-  fallbackLocale = 'zh'
-}
+let fallbackLocale: string = 'zh'
 
 // 当前设置的区域语言
-let currentLocale: string = ''
-if (ENV_LOCALE) {
-  ;[currentLocale] = normalizeLocale(ENV_LOCALE)
-}
-if (!currentLocale) {
-  currentLocale = determineLocale({ fallbackLocale })
-}
+let currentLocale: string = determineLocale({ fallbackLocale })
 
 // 标记是否在更新区域语言设置，避免无限循环设置
 let isUpdating = false

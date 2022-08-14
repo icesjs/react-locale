@@ -61,10 +61,7 @@ export function determineLocale(options?: {
   storageLocaleKey?: string
   fallbackLocale?: string
 }): string {
-  let defaultKey = process.env.REACT_APP_LANG_QUERY_KEY
-  if (!defaultKey || typeof (defaultKey as any) !== 'string') {
-    defaultKey = 'lang'
-  }
+  const defaultKey = 'lang'
   const {
     urlLocaleKey = defaultKey,
     cookieLocaleKey = defaultKey,

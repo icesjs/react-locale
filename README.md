@@ -317,12 +317,3 @@ en:
 #     }
 #  }
 ```
-
-## Build Env
-
-```dotenv
-REACT_APP_DEFAULT_LOCALE=zh
-REACT_APP_FALLBACK_LOCALE=zh
-REACT_APP_SUSPEND_LOCALE_WARNING=false
-REACT_APP_LANG_QUERY_KEY=lang
-```
