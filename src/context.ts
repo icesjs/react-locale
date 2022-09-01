@@ -12,6 +12,8 @@ let isUpdating = false
 
 const unregisterProp = '__localeChangeUnregister'
 
+let listenerId = 1
+
 interface ListenerFunction {
   (arg: string): void
 
@@ -102,12 +104,12 @@ export function subscribe(handle: ListenerFunction) {
   }
   let unregister = handle[unregisterProp]
   if (!unregister) {
-    let id = (Date.now() + Math.random() * 10e6).toFixed()
+    let id = listenerId++
     unregister = () => {
       if (id) {
         listeners[id][unregisterProp] = null
         delete listeners[id]
-        id = ''
+        id = 0
       }
     }
     handle[unregisterProp] = unregister
