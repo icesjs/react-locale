@@ -4,6 +4,7 @@ import { MessageDefinitions, PluginFunction, withDefinitions } from './message'
 import {
   getFallbackLocale,
   getLocale as getGlobalLocale,
+  LocaleContext,
   setFallbackLocale,
   setLocale as setContextLocale,
   subscribe,
@@ -117,13 +118,17 @@ export function useContextLocaleTrans(
 ) {
   // 这里locale状态从上下文中获取
   const locale = useContext(contextType)
-  const [localeCode] = normalizeLocale(locale)
-
-  // 这里校验上下文组件提供的值
-  // 校验值是因为，上下文组件可以任意设置其值类型，并不能保证提供的值是有效的区域语言代码字符串
-  // 如果校验不通过，会抛出异常
-  validateLocale(localeCode, false, locale)
-
+  //
+  let localeCode: string
+  if (contextType !== LocaleContext) {
+    ;[localeCode] = normalizeLocale(locale)
+    // 这里校验上下文组件提供的值
+    // 校验值是因为，上下文组件可以任意设置其值类型，并不能保证提供的值是有效的区域语言代码字符串
+    // 如果校验不通过，会抛出异常
+    validateLocale(localeCode, false, locale)
+  } else {
+    localeCode = locale
+  }
   // 使用转译函数
   return useLocale(localeCode, definitions, plugins, fallback)
 }

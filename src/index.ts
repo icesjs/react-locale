@@ -12,6 +12,7 @@ export * as plugins from './plugins'
 //
 export {
   LocaleContext,
+  LocaleProvider,
   setLocale,
   setFallbackLocale,
   getLocale,

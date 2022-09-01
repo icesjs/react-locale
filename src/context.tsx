@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useEffect, useState } from 'react'
 import { determineLocale, normalizeLocale } from './utils'
 
 // 备选语言
@@ -123,3 +124,19 @@ export function subscribe(handle: ListenerFunction) {
  */
 export const LocaleContext = React.createContext(currentLocale)
 LocaleContext.displayName = 'LocaleContext'
+
+/**
+ * 默认的全局语言上下文组件。
+ * @param value
+ * @param props
+ * @constructor
+ */
+export const LocaleProvider: React.FC<React.ProviderProps<string>> = function LocaleProvider({
+  value,
+  ...props
+}) {
+  const [state, setState] = useState(value)
+  useEffect(() => subscribe(setState), [])
+  useEffect(() => setLocale(value), [value])
+  return <LocaleContext.Provider {...props} value={state} />
+}
