@@ -140,7 +140,7 @@ export function useLocaleTrans(
   definitions?: MessageDefinitions
 ) {
   // 定义函数组件locale状态
-  const [locale, setLocale] = useState(getGlobalLocale())
+  const [locale, setLocale] = useState(() => getGlobalLocale())
   // 订阅全局locale状态变更事件
   useEffect(() => subscribe(setLocale), [])
   // 使用转译函数
@@ -212,6 +212,7 @@ export function withDefinitionsHook(definitions?: MessageDefinitions) {
     //
     return useLocaleTrans(plugins, fallback, definitions)
   }
+
   return useTrans
 }
 

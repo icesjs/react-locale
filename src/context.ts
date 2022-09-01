@@ -10,8 +10,16 @@ let currentLocale: string = determineLocale({ fallbackLocale })
 // 标记是否在更新区域语言设置，避免无限循环设置
 let isUpdating = false
 
+const unregisterProp = '__localeChangeUnregister'
+
+interface ListenerFunction {
+  (arg: string): void
+
+  [unregisterProp]?: (() => void) | null
+}
+
 // 当前已订阅区域语言变化的监听
-const listeners: { handle: (locale: string) => void; unregister: () => void }[] = []
+const listeners: { [p: string]: ListenerFunction } = {}
 
 /**
  * 获取备选区域语言代码。
@@ -73,7 +81,7 @@ export function setLocale(locale: string) {
   try {
     isUpdating = true
     currentLocale = localeCode
-    for (const { handle } of listeners) {
+    for (const handle of Object.values(listeners)) {
       handle(localeCode)
     }
   } catch (e) {
@@ -88,24 +96,24 @@ export function setLocale(locale: string) {
  * @param handle 监听处理函数。
  * @return 返回取消订阅的函数。
  */
-export function subscribe(handle: (locale: string) => void) {
+export function subscribe(handle: ListenerFunction) {
   if (typeof handle !== 'function') {
     throw new Error('Handle is not a function')
   }
-  let registered = listeners.find((item) => item.handle === handle)
-  if (!registered) {
-    registered = {
-      handle,
-      unregister() {
-        listeners.splice(
-          listeners.findIndex((item) => item.handle === handle),
-          1
-        )
-      },
+  let unregister = handle[unregisterProp]
+  if (!unregister) {
+    let id = (Date.now() + Math.random() * 10e6).toFixed()
+    unregister = () => {
+      if (id) {
+        listeners[id][unregisterProp] = null
+        delete listeners[id]
+        id = ''
+      }
     }
-    listeners.push(registered)
+    handle[unregisterProp] = unregister
+    listeners[id] = handle
   }
-  return registered.unregister
+  return unregister
 }
 
 /**

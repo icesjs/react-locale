@@ -1,5 +1,5 @@
 import { formatPluginArgs, hasOwnProperty, normalizeLocale } from './utils'
-import { getFallbackLocale, getLocale } from './context'
+import { getFallbackLocale } from './context'
 import { placeholder } from './plugins'
 
 type MessageDataValue = string | number | boolean | null
@@ -31,14 +31,6 @@ export type PluginFunction = (
  */
 export type PluginTranslate = ReturnType<typeof getPluginTranslate>
 
-/**
- * 判定给定的值是否是一个消息内容的值。
- * @param obj
- */
-function isMessageDataValue(obj: any) {
-  return obj === null || /string|number|boolean/.test(typeof obj)
-}
-
 // 转换为数字和字符串类型
 function toMessageValue(val: MessageDataValue): MessageValue {
   return typeof val === 'number' ? val : `${val}`
@@ -57,13 +49,7 @@ export function normalizeDefinitions(dataSet: any): MessageDefinitions {
     }
     const localeCode = normalizeLocale(locale)[0]
     if (!hasOwnProperty(definitions, localeCode)) {
-      definitions[localeCode] = {}
-    }
-    const messageData = definitions[localeCode]
-    for (const [key, val] of Object.entries(data)) {
-      if (isMessageDataValue(val)) {
-        messageData[key] = val as MessageDataValue
-      }
+      definitions[localeCode] = data as MessageData
     }
   }
   return definitions
@@ -80,13 +66,14 @@ function filterMessage(
   dataList: { locale: string; data: MessageData }[],
   preference: string
 ) {
+  // dataList 是根据期望的语言优先级筛选后的数据列表
   for (const { locale, data } of dataList) {
     if (hasOwnProperty(data, key)) {
       const message = data[key]
       // @ts-ignore
       if (locale !== preference && !window.__suspendReactLocaleWarning) {
         console.warn(
-          `Missing message with key of "${key}" for locale [${preference}], using default message of locale [${locale}] as fallback.`
+          `Missing message with key of "${key}" for locale ${preference}, using default message of locale ${locale} as fallback.`
         )
       }
       return { locale, message }
@@ -141,41 +128,22 @@ function getPluginTranslate(locale: string, fallback?: string) {
 export function getLocaleMessage(
   key: string,
   pluginArgs: any[],
-  context: {
-    locale: string
-    fallback: string
-    plugins: PluginFunction[]
-    definitions: MessageDefinitions
-  }
+  context: ReturnType<typeof getTranslateContext>
 ): string | never {
-  const { locale, fallback, plugins, definitions } = context
-  const [preference, prefLang] = normalizeLocale(locale)
-  const [backLangArea, backLang] = normalizeLocale(fallback)
-  const locales = Array.from(new Set([preference, prefLang, backLangArea, backLang]))
-  const dataList = locales.map((locale) => ({ locale, data: definitions[locale] }))
-
+  const { locale, fallback, plugins, dataList } = context
   // 筛选本土化的消息内容
-  const localizedMessage = filterMessage(key, dataList, preference)
+  const localizedMessage = filterMessage(key, dataList, locale)
   if (!localizedMessage) {
     // 没有定义message值，抛出错误，提醒开发者修正
-    throw new Error(`Unknown localized message with key of "${key}" for [${preference}]`)
+    throw new Error(`Unknown localized message with key of "${key}" for [${locale}]`)
   }
   const { locale: messageLocale, message: messageDataValue } = localizedMessage
-
-  // 默认添加placeholder插件，用于处理 { var } 变量替换
-  // placeholder插件放置在插件列表最后进行处理
-  const appliedPlugins = [...plugins]
-  const plugIndex = appliedPlugins.indexOf(placeholder)
-  if (plugIndex !== -1) {
-    appliedPlugins.splice(plugIndex, 1)
-  }
-  appliedPlugins.push(placeholder)
 
   // 取得插件转译函数
   const translate = getPluginTranslate(messageLocale, fallback)
 
   // 应用插件列表处理消息内容格式化
-  const value = appliedPlugins.reduce(
+  const value = plugins.reduce(
     (message, plugin) => plugin(message, [...pluginArgs], translate),
     toMessageValue(messageDataValue)
   )
@@ -183,6 +151,45 @@ export function getLocaleMessage(
   // 插件处理后的内容，最终强制转换为字符串返回
   // 所以插件里，不要返回对象，undefined什么的
   return `${value}`
+}
+
+/**
+ * 获取转译函数需要的参数上下文对象。
+ * @param data 传入的数据。
+ * @param context 传入的参数上下文。
+ */
+function getTranslateContext(
+  data: MessageDefinitions,
+  context: { locale: string; fallback?: string; plugins?: PluginFunction | PluginFunction[] | null }
+) {
+  const definitions = normalizeDefinitions(data)
+  //
+  const { plugins, locale, fallback } = context
+  let usedPlugins: any[] = Array.isArray(plugins) ? plugins : [plugins]
+  usedPlugins = usedPlugins.filter((plugin) => typeof plugin === 'function')
+  const defaultPlugIndex = usedPlugins.indexOf(placeholder)
+  if (defaultPlugIndex !== -1) {
+    usedPlugins.splice(defaultPlugIndex, 1)
+  }
+  usedPlugins.push(placeholder)
+  // 格式化语言区域名
+  const fallbackLang = fallback || getFallbackLocale()
+  const [preference, prefLang] = normalizeLocale(locale)
+  const [backLangArea, backLang] = normalizeLocale(fallbackLang)
+  // 下面列表项的顺序不能改变，代表了取值的优先级
+  const dataList = [preference, prefLang, backLangArea, backLang].reduce((list, loc: string) => {
+    if (!list.some(({ locale }) => locale === loc)) {
+      list.push({ locale: loc, data: definitions[loc] })
+    }
+    return list
+  }, [] as { locale: string; data: MessageData }[])
+  //
+  return {
+    locale,
+    fallback: fallbackLang,
+    dataList,
+    plugins: usedPlugins as PluginFunction[],
+  }
 }
 
 /**
@@ -202,17 +209,9 @@ export function withDefinitions(
     // 数据还未加载，返回空字符串的转译函数（或者返回一个loading??）
     return () => ''
   }
-  const definitions = normalizeDefinitions(data)
+  const translateContext = getTranslateContext(data, context)
   // 返回转译函数
   return function translate(key: string, ...pluginArgs: any[]) {
-    const { locale = getLocale(), fallback = getFallbackLocale(), plugins } = context
-    let usedPlugins: any[] = Array.isArray(plugins) ? plugins : [plugins]
-    usedPlugins = usedPlugins.filter((plugin) => typeof plugin === 'function')
-    return getLocaleMessage(key, pluginArgs, {
-      locale,
-      fallback,
-      definitions,
-      plugins: usedPlugins as PluginFunction[],
-    })
+    return getLocaleMessage(key, pluginArgs, translateContext)
   }
 }

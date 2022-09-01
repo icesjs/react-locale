@@ -113,12 +113,22 @@ export function isObject(obj: any) {
 }
 
 /**
+ * 判断对象是否包含自身属性。
+ * @param obj 待判定的对象。
+ * @param prop 属性名。
+ */
+function hasOwnProp(obj: object, prop: string) {
+  // @ts-ignore
+  return Object.hasOwn ? Object.hasOwn(obj, prop) : Object.prototype.hasOwnProperty.call(obj, prop)
+}
+
+/**
  * 判断给定的对象是不是自身包含一个属性。
  * @param obj 待判定的对象。
  * @param prop 需要检查的属性名。
  */
 export function hasOwnProperty(obj: any, prop: string) {
-  return !(obj === null || obj === undefined) && Object.prototype.hasOwnProperty.call(obj, prop)
+  return !(obj === null || obj === undefined) && hasOwnProp(obj, prop)
 }
 
 /**
