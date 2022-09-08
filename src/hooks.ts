@@ -39,6 +39,11 @@ export type UseTransType = ReturnType<typeof withDefinitionsHook>
  */
 export type UseContextTransType = ReturnType<typeof withDefinitionsContextHook>
 
+/**
+ * 语言资源加载函数。
+ */
+export type LocaleResourceLoader = (locale: string) => Promise<MessageDefinitions>
+
 // 加载异步数据
 function fetchLocaleData(
   locale: string,
@@ -59,7 +64,7 @@ function fetchLocaleData(
  */
 function useLocale(
   expectedLocale: string,
-  definitions?: MessageDefinitions | ((locale: string) => Promise<MessageDefinitions>),
+  definitions?: MessageDefinitions | LocaleResourceLoader,
   plugins?: PluginFunction | PluginFunction[] | null,
   fallback?: string
 ): UseTransResponse {
@@ -114,7 +119,7 @@ export function useContextLocaleTrans(
   contextType: Context<string>,
   plugins?: PluginFunction | PluginFunction[] | null,
   fallback?: string,
-  definitions?: MessageDefinitions
+  definitions?: MessageDefinitions | LocaleResourceLoader
 ) {
   // 这里locale状态从上下文中获取
   const locale = useContext(contextType)
@@ -142,7 +147,7 @@ export function useContextLocaleTrans(
 export function useLocaleTrans(
   plugins?: PluginFunction | PluginFunction[] | null,
   fallback?: string,
-  definitions?: MessageDefinitions
+  definitions?: MessageDefinitions | LocaleResourceLoader
 ) {
   // 定义函数组件locale状态
   const [locale, setLocale] = useState(() => getGlobalLocale())
@@ -156,7 +161,7 @@ export function useLocaleTrans(
  * 绑定消息定义对象的 useTrans hook。
  * @param definitions 消息定义对象。
  */
-export function withDefinitionsHook(definitions?: MessageDefinitions) {
+export function withDefinitionsHook(definitions?: MessageDefinitions | LocaleResourceLoader) {
   // 初始化 locale 状态
   let init = (initLocale?: () => string, initialFallback?: string) => {
     // 重置为空方法，因为只需要初始化执行一次
@@ -225,7 +230,9 @@ export function withDefinitionsHook(definitions?: MessageDefinitions) {
  * 绑定消息定义对象的 useContextTrans hook。
  * @param definitions 消息定义对象。
  */
-export function withDefinitionsContextHook(definitions?: MessageDefinitions) {
+export function withDefinitionsContextHook(
+  definitions?: MessageDefinitions | LocaleResourceLoader
+) {
   return function useContextTrans(
     contextType: Context<string>,
     plugins?: PluginFunction | PluginFunction[] | null,

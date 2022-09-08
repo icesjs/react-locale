@@ -19,9 +19,20 @@ export {
   getFallbackLocale,
   subscribe,
 } from './context'
-export { withDefinitionsHook, withDefinitionsContextHook, UseTransResponse } from './hooks'
+export {
+  withDefinitionsHook,
+  withDefinitionsContextHook,
+  UseTransResponse,
+  LocaleResourceLoader,
+} from './hooks'
 export { withDefinitionsComponent, TranslateType } from './Translate'
-export { PluginFunction, PluginTranslate, MessageValue, MessageDefinitions } from './message'
+export {
+  PluginFunction,
+  PluginTranslate,
+  MessageValue,
+  MessageData,
+  MessageDefinitions,
+} from './message'
 
 /**************************************************************************
  * API的实际导出是由构建插件@ices/locale-webpack-plugin根据语言定义文件自动生成。 \

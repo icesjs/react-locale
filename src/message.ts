@@ -3,7 +3,7 @@ import { getFallbackLocale } from './context'
 import { placeholder } from './plugins'
 
 type MessageDataValue = string | number | boolean | null
-type MessageData = { [key: string]: MessageDataValue }
+export type MessageData = { [key: string]: MessageDataValue }
 
 /**
  * 语言模块消息内容定义类型。
