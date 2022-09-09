@@ -1,4 +1,4 @@
-import { formatPluginArgs, hasOwnProperty, normalizeLocale } from './utils'
+import { hasOwnProperty, normalizeLocale } from './utils'
 import { getFallbackLocale } from './context'
 import { placeholder } from './plugins'
 
@@ -115,7 +115,7 @@ function getPluginTranslate(locale: string, fallback?: string) {
       locale,
       plugins,
       fallback: pluginFallback || fallback,
-    })(key, ...formatPluginArgs(pluginArgs))
+    })(key, pluginArgs)
   }
 }
 
@@ -135,7 +135,8 @@ export function getLocaleMessage(
   const localizedMessage = filterMessage(key, dataList, locale)
   if (!localizedMessage) {
     // 没有定义message值，抛出错误，提醒开发者修正
-    throw new Error(`Unknown localized message with key of "${key}" for [${locale}]`)
+    console.error(`Unknown localized message with key of "${key}" for [${locale}]`)
+    return `<key>${key}</key>`
   }
   const { locale: messageLocale, message: messageDataValue } = localizedMessage
 
@@ -206,7 +207,7 @@ export function withDefinitions(
   }
 ) {
   if (data === null) {
-    // 数据还未加载，返回空字符串的转译函数（或者返回一个loading??）
+    // 数据还未加载，返回空字符串的转译函数。
     return () => ''
   }
   const translateContext = getTranslateContext(data, context)

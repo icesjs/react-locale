@@ -2,7 +2,7 @@
  * 转义正则元字符。
  * @param str 待转义的字符序列。
  */
-export function escapeRegExpCharacters(str: string): string {
+function escapeRegExpCharacters(str: string): string {
   return str.replace(/[|/\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d')
 }
 
@@ -10,7 +10,7 @@ export function escapeRegExpCharacters(str: string): string {
  * 从URL里匹配语言设置。
  * @param queryName 查询参数名称。
  */
-export function getLocaleFromURL(queryName: string = 'lang') {
+function getLocaleFromURL(queryName: string = 'lang') {
   const escapedName = escapeRegExpCharacters(queryName)
   const query = new RegExp(`\\b${escapedName}=([^&#]+)`).exec(location.search)
   return query ? decodeURIComponent(query[1]) : ''
@@ -20,7 +20,7 @@ export function getLocaleFromURL(queryName: string = 'lang') {
  * 从cookie中获取语言设置。
  * @param key cookie键名。
  */
-export function getLocaleFromCookie(key: string = 'lang') {
+function getLocaleFromCookie(key: string = 'lang') {
   const escapedKey = escapeRegExpCharacters(key)
   const regx = new RegExp(`^${escapedKey}=(.+)`)
   let cookie: string[] | null
@@ -36,7 +36,7 @@ export function getLocaleFromCookie(key: string = 'lang') {
  * 从本地存储中获取语言设置。
  * @param key 本地存储键名。
  */
-export function getLocaleFromLocalStorage(key: string = 'lang') {
+function getLocaleFromLocalStorage(key: string = 'lang') {
   if (window.localStorage) {
     return localStorage.getItem(key)
   }
@@ -46,7 +46,7 @@ export function getLocaleFromLocalStorage(key: string = 'lang') {
 /**
  * 从浏览器设置中获取语言设置。
  */
-export function getLocaleFromBrowser() {
+function getLocaleFromBrowser() {
   // @ts-ignore
   return navigator.language || navigator.userLanguage || ''
 }
@@ -119,7 +119,7 @@ export function isObject(obj: any) {
  */
 function hasOwnProp(obj: object, prop: string) {
   // @ts-ignore
-  return Object.hasOwn ? Object.hasOwn(obj, prop) : Object.prototype.hasOwnProperty.call(obj, prop)
+  return Object.hasOwn ? Object.hasOwn(obj, prop) : Object.getOwnPropertyNames(obj).includes(prop)
 }
 
 /**
@@ -129,22 +129,4 @@ function hasOwnProp(obj: object, prop: string) {
  */
 export function hasOwnProperty(obj: any, prop: string) {
   return !(obj === null || obj === undefined) && hasOwnProp(obj, prop)
-}
-
-/**
- * 获取插件参数。
- * 参数如果是一个数组，则会展开，如果不是数组，则会用作为数组元素返回一个新数组。
- * 如果参数本身是一个数组，则需要使用 [[]] 来传参。
- * @param args
- */
-export function formatPluginArgs(args: any) {
-  let pluginArgs
-  if (Array.isArray(args)) {
-    pluginArgs = args
-  } else if (typeof args !== 'undefined') {
-    pluginArgs = [args]
-  } else {
-    pluginArgs = []
-  }
-  return pluginArgs
 }

@@ -24,7 +24,7 @@ module.exports = {
 ```tsx
 // foo.tsx
 import React, { useCallback } from 'react'
-import { useTrans } from './lang.yml'
+import useTrans from './lang.yml'
 
 function ToggleLocaleButton() {
   const initialLocale = 'zh-CN' // or () => 'zh-CN'
@@ -42,7 +42,8 @@ function ToggleLocaleButton() {
 ```tsx
 // boo.tsx
 import React from 'react'
-import { Trans, setLocale, setFallbackLocale, getLocale } from './lang.yml'
+import { setLocale, setFallbackLocale, getLocale } from '@ices/react-locale'
+import { Trans } from './lang.yml'
 
 setLocale('zh-CN')
 setFallbackLocale('zh')
@@ -98,8 +99,15 @@ ClickMe: Click Me!
 // foo.tsx
 import React from 'react'
 
+import {
+  setLocale,
+  getLocale,
+  determineLocale,
+  LocaleContext,
+  LocaleProvider,
+} from '@ices/react-locale'
 // Import a language module bound to the current module
-import { Trans, useTrans, useContextTrans, setLocale, getLocale, utils } from './lang.yml'
+import { Trans, useTrans, useContextTrans } from './lang.yml'
 import { somePlugin } from './plugins.ts'
 
 function MyButton() {
@@ -113,14 +121,12 @@ function MyButton() {
   return <button>{trans('message-key', { foo: true }, 'pluginArgTwo')}</button>
 }
 
-const LocaleContext = React.createContext(
-  utils.determineLocale({
-    urlLocaleKey: 'lang',
-    cookieLocaleKey: 'lang',
-    storageLocaleKey: 'lang',
-    fallbackLocale: 'zh-CN',
-  })
-)
+const initialLocaleLang = determineLocale({
+  urlLocaleKey: 'lang',
+  cookieLocaleKey: 'lang',
+  storageLocaleKey: 'lang',
+  fallbackLocale: 'zh-CN',
+})
 
 function ContextButton() {
   const plugins = []
@@ -133,18 +139,22 @@ function ContextButton() {
 }
 
 // Bind the context to the Trans Component
+// From v2.3.0, TransComponent will bound the LocaleContext by default.
 Trans.contextType = LocaleContext
+// Global set this componet to support output html content.
+Trans.enableDangerouslySetInnerHTML = true
 
 class ContextButtonComponent extends React.Component<any, any> {
   render() {
     return (
-      <LocaleContext.Provider value={'zh-CN'}>
+      <LocaleProvider value={initialLocaleLang}>
         <button>
-          <Trans id="message-key" plugins={somePlugin} data={[{ foo: true }, 'pluginArgTwo']} />
+          {/* enableHTML prop is prior to the static prop of enableDangerouslySetInnerHTML */}
+          <Trans enableHTML={false} id="message-key" plugins={somePlugin} data={{ foo: true }} />
         </button>
         {/* The Function component ContextButton will bind the locale to the LocaleContext */}
         <ContextButton />
-      </LocaleContext.Provider>
+      </LocaleProvider>
     )
   }
 }
@@ -172,11 +182,27 @@ import {
   withDefinitionsComponent,
 } from '@ices/react-locale'
 import localeData from 'other-locale-data-module'
-
+// - {[lang:string]: {[key:string]: string }}
+// - (lang:string)=>Promise<{[lang:string]: {[key:string]: string}}>
 // You can use hook or component with customize locale data
 const useTransHook = withDefinitionsHook(localeData)
 const useContextTransHook = withDefinitionsContextHook(localeData)
 const TranslateComponent = withDefinitionsComponent(localeData)
+```
+
+```ts
+// foo.ts
+
+import { useTraslator } from '@ices/react-locale'
+import localeData from 'other-locale-data-module'
+
+function MyComponent() {
+  // The localeData var can be:
+  // - {[lang:string]: {[key:string]: string }} // just like: {en: {key: 'some'}}
+  // - {[lang:string]: ()=>Promise<{default: {[key:string]: string }}}>} // just like: {en: ()=>import('./xx/locales/en.json')}
+  // - (lang:string)=>Promise<{[lang:string]: {[key:string]: string}}> // legency support
+  const { useTrans, useContextTrans, Translate } = useTraslator(localeData)
+}
 ```
 
 ## #include
@@ -258,7 +284,6 @@ zh:
 
 en:
   foo: Something
-
 # ----------------------------
 # This will be exported like:
 # ----------------------------
@@ -325,4 +350,3 @@ When a fallback language is used, a warning message is printed on the console, w
 ```javascript
 window.__suspendReactLocaleWarning = true
 ```
-

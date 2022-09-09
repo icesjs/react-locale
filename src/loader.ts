@@ -21,11 +21,7 @@ export function getModuleCode({
     var Trans = withDefinitionsComponent(definitions)
     var useTrans = withDefinitionsHook(definitions)
     var useContextTrans = withDefinitionsContextHook(definitions)
-    export {
-      setLocale, getLocale, setFallbackLocale, getFallbackLocale,
-      LocaleContext, subscribe, plugins, utils 
-    } from ${runtime}
-    export { definitions, useTrans as default, Trans, useTrans, useContextTrans }
+    export { useTrans as default, definitions, Trans, useTrans, useContextTrans }
   `
     : `
     /** ${resourcePath} **/
@@ -42,14 +38,6 @@ export function getModuleCode({
     exports.Trans = Trans
     exports.useTrans = useTrans
     exports.useContextTrans = useContextTrans
-    exports.getLocale = runtime.getLocale
-    exports.setLocale = runtime.setLocale
-    exports.getFallbackLocale = runtime.getFallbackLocale
-    exports.setFallbackLocale = runtime.setFallbackLocale
-    exports.LocaleContext = runtime.LocaleContext
-    exports.subscribe = runtime.subscribe
-    exports.plugins = runtime.plugins
-    exports.utils = runtime.utils
   `
 }
 
@@ -58,14 +46,5 @@ export function getModuleCode({
  * 模块导出定义，用于生成资源模块的导出声明。
  */
 export function getModuleExports() {
-  return `
-    export {
-      Trans, useTrans, useContextTrans, definitions,
-      setLocale, getLocale, setFallbackLocale, getFallbackLocale,
-      LocaleContext, subscribe, plugins, utils,
-      useTrans as default,
-      UseTransResponse, TranslateType, PluginFunction,
-      PluginTranslate, MessageValue, MessageDefinitions
-    } from '@ices/react-locale'
-  `
+  return `export { useTrans as default, definitions, Trans, useTrans, useContextTrans }`
 }
