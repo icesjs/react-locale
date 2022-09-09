@@ -46,5 +46,8 @@ export function getModuleCode({
  * 模块导出定义，用于生成资源模块的导出声明。
  */
 export function getModuleExports() {
-  return `export { useTrans as default, definitions, Trans, useTrans, useContextTrans }`
+  return `export {
+  useTrans as default, definitions, Trans, useTrans, useContextTrans
+} from '@ices/react-locale'
+`
 }
