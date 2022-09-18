@@ -35,7 +35,7 @@ export const debugMessageFilter = {
 }
 
 // 设置调试信息配置对象
-export function setDebugMessageFilter(filter: typeof debugMessageFilter) {
+export function setDebugMessageFilter(filter: Partial<typeof debugMessageFilter>) {
   Object.assign(debugMessageFilter, filter)
 }
 
