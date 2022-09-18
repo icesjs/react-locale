@@ -1,5 +1,5 @@
 import { hasOwnProperty, normalizeLocale } from './utils'
-import { getFallbackLocale } from './context'
+import { debugMessageFilter, getFallbackLocale } from './context'
 import { placeholder } from './plugins'
 
 type MessageDataValue = string | number | boolean | null
@@ -71,7 +71,7 @@ function filterMessage(
     if (hasOwnProperty(data, key)) {
       const message = data[key]
       // @ts-ignore
-      if (locale !== preference && !window.__suspendReactLocaleWarning) {
+      if (locale !== preference && debugMessageFilter.warning) {
         console.warn(
           `Missing message with key of "${key}" for locale ${preference}, using default message of locale ${locale} as fallback.`
         )
@@ -119,6 +119,16 @@ function getPluginTranslate(locale: string, fallback?: string) {
   }
 }
 
+function printErrorMessage(key: string, locale: string) {
+  if (debugMessageFilter.error) {
+    if (key || debugMessageFilter.emptyKeyError) {
+      console.error(`Unknown localized message with key of "${key}" for [${locale}]`)
+      return `<key>${key}</key>`
+    }
+  }
+  return ''
+}
+
 /**
  * 获取区域化的内容。
  * @param key
@@ -131,12 +141,14 @@ export function getLocaleMessage(
   context: ReturnType<typeof getTranslateContext>
 ): string | never {
   const { locale, fallback, plugins, dataList } = context
+  if (!key) {
+    return printErrorMessage(key, locale)
+  }
+
   // 筛选本土化的消息内容
   const localizedMessage = filterMessage(key, dataList, locale)
   if (!localizedMessage) {
-    // 没有定义message值，抛出错误，提醒开发者修正
-    console.error(`Unknown localized message with key of "${key}" for [${locale}]`)
-    return `<key>${key}</key>`
+    return printErrorMessage(key, locale)
   }
   const { locale: messageLocale, message: messageDataValue } = localizedMessage
 

@@ -1,10 +1,10 @@
 import { useCallback, useMemo } from 'react'
 import { MessageData, MessageDefinitions } from './message'
 import {
-  UseContextTransType,
-  UseTransType,
-  UseTransResponse,
   LocaleResourceLoader,
+  UseContextTransType,
+  UseTransResponse,
+  UseTransType,
   withDefinitionsContextHook,
   withDefinitionsHook,
 } from './hooks'
@@ -29,6 +29,7 @@ export {
   LocaleProvider,
   setLocale,
   setFallbackLocale,
+  setDebugMessageFilter,
   getLocale,
   getFallbackLocale,
   subscribe,

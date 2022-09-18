@@ -24,6 +24,21 @@ interface ListenerFunction {
 // 当前已订阅区域语言变化的监听
 const listeners: { [p: string]: ListenerFunction } = {}
 
+// 调试信息配置对象
+export const debugMessageFilter = {
+  // @ts-ignore
+  warning: !window.__suspendReactLocaleWarning,
+  // @ts-ignore
+  error: !window.__suspendReactLocaleError,
+  // @ts-ignore
+  emptyKeyError: !window.__suspendReactLocaleEmptyKeyError,
+}
+
+// 设置调试信息配置对象
+export function setDebugMessageFilter(filter: typeof debugMessageFilter) {
+  Object.assign(debugMessageFilter, filter)
+}
+
 /**
  * 获取备选区域语言代码。
  */

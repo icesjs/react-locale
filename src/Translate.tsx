@@ -56,16 +56,19 @@ function isTHMLText(text: string) {
   return /<.*?\/?>/.test(text)
 }
 
-function RenderTextOrHTML({ tagName = 'span', content, enableHTML, ...props }: RendererVFCProps) {
+function RenderTextOrHTML({ tagName, content, enableHTML, ...props }: RendererVFCProps) {
   if (enableHTML && isTHMLText(content)) {
-    return React.createElement(tagName, {
+    return React.createElement(tagName || 'span', {
       ...props,
       dangerouslySetInnerHTML: {
         __html: content,
       },
     })
   }
-  return <>{content}</>
+  if (tagName) {
+    return React.createElement(tagName, props, content)
+  }
+  return content
 }
 
 /**
@@ -82,6 +85,7 @@ const LocaleTrans: TransVFC = ({
 }) => {
   const [translate] = useLocaleTrans(plugins, fallback, definitions)
   return (
+    // @ts-ignore
     <RenderTextOrHTML content={translate(id, data)} enableHTML={enableHTML} tagName={tagName} />
   )
 }
@@ -101,6 +105,7 @@ const ContextLocaleTrans: ContextTransVFC = ({
 }) => {
   const [translate] = useContextLocaleTrans(contextType, plugins, fallback, definitions)
   return (
+    // @ts-ignore
     <RenderTextOrHTML content={translate(id, data)} enableHTML={enableHTML} tagName={tagName} />
   )
 }
