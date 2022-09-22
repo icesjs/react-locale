@@ -33,7 +33,7 @@ function makeTypesFile() {
   }
 }
 
-function getPlugins(format, target = 'es5', makeTypes = false) {
+function getPlugins(format, target, makeTypes = false) {
   return [
     externals({
       builtins: true,
@@ -60,16 +60,7 @@ export default [
       format: 'es',
       sourcemap,
     },
-    plugins: getPlugins('es'),
-  },
-  {
-    input,
-    output: {
-      file: pkg.module.replace(/\.js$/, '.es.js'),
-      format: 'es',
-      sourcemap,
-    },
-    plugins: getPlugins('es', 'es6'),
+    plugins: getPlugins('es', 'esnext'),
   },
   {
     input,
@@ -78,7 +69,7 @@ export default [
       format: 'cjs',
       sourcemap,
     },
-    plugins: getPlugins('cjs'),
+    plugins: getPlugins('cjs', 'es5'),
   },
   {
     input: 'src/loader.ts',
