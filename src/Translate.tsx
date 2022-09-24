@@ -115,8 +115,7 @@ const ContextLocaleTrans: ContextTransVFC = ({
  * @param definitions 消息定义数据对象。
  */
 export function withDefinitionsComponent(definitions?: MessageDefinitions | LocaleResourceLoader) {
-  return class Translate extends React.PureComponent<TranslateProps> {
-    static displayName = 'TranslateComponent'
+  return class TranslateComponent extends React.PureComponent<TranslateProps> {
     // 默认使用内部的全局 LocaleContext
     static contextType = LocaleContext
     // 全局设置默认的是否允许输出HTML内容
@@ -124,7 +123,7 @@ export function withDefinitionsComponent(definitions?: MessageDefinitions | Loca
 
     render() {
       // 如果使用了上下文绑定，则使用绑定上下文的转译组件
-      const { contextType, enableDangerouslySetInnerHTML: globalEnableHTML } = Translate
+      const { contextType, enableDangerouslySetInnerHTML: globalEnableHTML } = TranslateComponent
       // 因为不能保证所有使用者都开启了ts校验，这里仍然检查下是否包含子组件
       const { children, enableHTML = globalEnableHTML, ...rest } = this.props as any
       if (children && !(typeof children === 'string' && !children.trim())) {

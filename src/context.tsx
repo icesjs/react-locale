@@ -138,7 +138,6 @@ export function subscribe(handle: ListenerFunction) {
  * 可供选用的LocaleContext。
  */
 export const LocaleContext = React.createContext(currentLocale)
-LocaleContext.displayName = 'LocaleContext'
 
 /**
  * 默认的全局语言上下文组件。
