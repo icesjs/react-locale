@@ -23,7 +23,8 @@ export type MessageValue = string | number
 export type PluginFunction = (
   message: MessageValue,
   pluginArgs: any[],
-  translate: PluginTranslate
+  translate: PluginTranslate,
+  key: string
 ) => MessageValue
 
 /**
@@ -79,7 +80,7 @@ function filterMessage(
       return { locale, message }
     }
   }
-  return null
+  return { locale: preference, message: '' }
 }
 
 /**
@@ -147,9 +148,6 @@ export function getLocaleMessage(
 
   // 筛选本土化的消息内容
   const localizedMessage = filterMessage(key, dataList, locale)
-  if (!localizedMessage) {
-    return printErrorMessage(key, locale)
-  }
   const { locale: messageLocale, message: messageDataValue } = localizedMessage
 
   // 取得插件转译函数
@@ -157,9 +155,13 @@ export function getLocaleMessage(
 
   // 应用插件列表处理消息内容格式化
   const value = plugins.reduce(
-    (message, plugin) => plugin(message, [...pluginArgs], translate),
+    (message, plugin) => plugin(message, [...pluginArgs], translate, key),
     toMessageValue(messageDataValue)
   )
+
+  if (value === '' || value === undefined) {
+    return printErrorMessage(key, locale)
+  }
 
   // 插件处理后的内容，最终强制转换为字符串返回
   // 所以插件里，不要返回对象，undefined什么的

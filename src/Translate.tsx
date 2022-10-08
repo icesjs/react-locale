@@ -53,7 +53,7 @@ export type TranslateType = ReturnType<typeof withDefinitionsComponent>
  * @param text
  */
 function isTHMLText(text: string) {
-  return /<.*?\/?>/.test(text)
+  return !/^<key>.*<\/key>$/.test(text) && /<.*?\/?>/.test(text)
 }
 
 function RenderTextOrHTML({ tagName, content, enableHTML, ...props }: RendererVFCProps) {
