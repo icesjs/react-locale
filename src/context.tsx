@@ -240,9 +240,9 @@ function emitLoadStart(locale: string, fallback: string) {
 /**
  * 发布语言加载完成事件。
  */
-function emitLoadFinish(locale: string, fallback: string) {
+function emitLoadFinish(locale: string, fallback: string, error?: Error) {
   if (localeLoadStatus[getLocaleLoadKey(locale, fallback)] === 'loading') {
-    emitLoadEvent(loadFinishListeners, 'finished', locale, fallback)
+    emitLoadEvent(loadFinishListeners, 'finished', locale, fallback, error)
   }
 }
 
@@ -260,7 +260,7 @@ export function fetchLocaleData(locale: string, fallback: string, fetch: LocaleR
       return Object.assign({}, res[1], res[0])
     },
     (err) => {
-      emitLoadFinish(locale, fallback)
+      emitLoadFinish(locale, fallback, err)
       emitLoadError(locale, fallback, err)
       throw err
     }

@@ -1,6 +1,6 @@
 {
   "name": "@ices/react-locale",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "React components for locale",
   "main": "dist/index.cjs.js",
   "module": "dist/index.es.js",
