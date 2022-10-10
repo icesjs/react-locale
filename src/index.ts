@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
-import { MessageData, MessageDefinitions } from './message'
+import { LocaleResourceLoader } from './context'
+import { MessageData, MessageDefinitions, TranslateFunction } from './message'
 import {
-  LocaleResourceLoader,
   UseContextTransType,
   UseTransResponse,
   UseTransType,
@@ -13,6 +13,7 @@ import { determineLocale, hasOwnProperty } from './utils'
 
 export {
   MessageDefinitions,
+  TranslateFunction,
   TranslateProps,
   TranslateType,
   UseContextTransType,
@@ -27,6 +28,9 @@ export {
 export {
   LocaleContext,
   LocaleProvider,
+  addLoadErrorListener,
+  addLoadStartListener,
+  addLoadFinishListener,
   setLocale,
   setFallbackLocale,
   setDebugMessageFilter,

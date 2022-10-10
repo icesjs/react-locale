@@ -1,10 +1,12 @@
-import { Context, useContext, useEffect, useMemo, useState } from 'react'
+import { Context, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { normalizeLocale } from './utils'
-import { MessageDefinitions, PluginFunction, withDefinitions } from './message'
+import { MessageDefinitions, PluginFunction, TranslateFunction, withDefinitions } from './message'
 import {
+  fetchLocaleData,
   getFallbackLocale,
   getLocale as getGlobalLocale,
   LocaleContext,
+  LocaleResourceLoader,
   setFallbackLocale,
   setLocale as setContextLocale,
   subscribe,
@@ -18,7 +20,7 @@ export type UseTransResponse = [
   /**
    * 转译函数。用于获取转译后的消息内容。
    */
-  (key: string, ...pluginArgs: any[]) => string,
+  TranslateFunction,
   /**
    * 当前已应用的区域语言值。
    */
@@ -39,20 +41,52 @@ export type UseTransType = ReturnType<typeof withDefinitionsHook>
  */
 export type UseContextTransType = ReturnType<typeof withDefinitionsContextHook>
 
-/**
- * 语言资源加载函数。
- */
-export type LocaleResourceLoader = (locale: string) => Promise<MessageDefinitions>
-
-// 加载异步数据
-function fetchLocaleData(
-  locale: string,
-  fallback: string,
-  fetch: (locale: string) => Promise<MessageDefinitions>
+// 插件函数如果不改变，则引用之前的数组，确保数组引用不变
+function getUpdatedPlugins(
+  prevPlugins: PluginFunction[],
+  pluginsProp?: PluginFunction | PluginFunction[] | null
 ) {
-  return Promise.all([fetch(locale), fetch(fallback)]).then((res) =>
-    Object.assign({}, res[0], res[1])
-  )
+  let nextPlugins: PluginFunction[]
+  if (!pluginsProp) {
+    nextPlugins = []
+  } else if (typeof pluginsProp === 'function') {
+    nextPlugins = [pluginsProp]
+  } else {
+    nextPlugins = [...pluginsProp]
+  }
+  if (prevPlugins.length !== nextPlugins.length) {
+    return nextPlugins
+  }
+  for (let i = 0; i < prevPlugins.length; i++) {
+    if (prevPlugins[i] !== nextPlugins[i]) {
+      return nextPlugins
+    }
+  }
+  return prevPlugins
+}
+
+/**
+ * 获取转译函数。
+ * @param context 转译函数所需上下文参数。
+ * @param fallbackTranslate 备用的转译函数。
+ */
+function useTranslate(
+  context: {
+    data: MessageDefinitions | null
+    locale: string
+    fallback: string
+    plugins?: PluginFunction | PluginFunction[] | null
+  },
+  fallbackTranslate?: TranslateFunction | null
+) {
+  const pluginsRef = useRef<PluginFunction[]>([])
+  const plugins = getUpdatedPlugins(pluginsRef.current, context.plugins)
+  pluginsRef.current = plugins
+
+  const { data, locale, fallback } = context
+  return useMemo(() => {
+    return withDefinitions(data, { locale, fallback, plugins }, fallbackTranslate)
+  }, [data, locale, fallback, plugins, fallbackTranslate])
 }
 
 /**
@@ -68,41 +102,105 @@ function useLocale(
   plugins?: PluginFunction | PluginFunction[] | null,
   fallback?: string
 ): UseTransResponse {
-  const [data, setData] = useState(() => {
-    if (typeof definitions !== 'function') {
-      return definitions || null
-    }
-    return null
-  })
-  const [locale, setLocale] = useState(() => expectedLocale)
-  //
+  const isAsyncResources = typeof definitions === 'function'
+
   const fallbackLocale = useMemo(() => {
     if (fallback) {
-      const [normalizedFallback] = normalizeLocale(fallback)
-      validateLocale(normalizedFallback, true, fallback)
-      return normalizedFallback
+      setFallbackLocale(fallback)
     }
     return getFallbackLocale()
   }, [fallback])
 
-  const translate = useMemo(() => {
-    return withDefinitions(data, { locale, fallback: fallbackLocale, plugins })
-  }, [data, locale, fallbackLocale, plugins])
+  const [state, setState] = useState<{
+    resourceLoader: LocaleResourceLoader | null
+    asyncData: MessageDefinitions | null
+    asyncLocale: string
+    asyncFallback: string
+    useFallbackTranslate: boolean
+  }>({
+    resourceLoader: isAsyncResources ? definitions : null,
+    asyncData: null,
+    asyncLocale: expectedLocale,
+    asyncFallback: fallbackLocale,
+    useFallbackTranslate: false,
+  })
+  let { asyncData, resourceLoader, asyncLocale, asyncFallback, useFallbackTranslate } = state
+
+  if (isAsyncResources) {
+    if (
+      resourceLoader !== definitions ||
+      asyncLocale !== expectedLocale ||
+      asyncFallback !== fallbackLocale
+    ) {
+      // 仅当数据源未更换时，即只切换语言时，使用备用的translate避免加载远程数据过程中闪白
+      useFallbackTranslate = resourceLoader === definitions
+      asyncData = null
+      resourceLoader = definitions
+      asyncLocale = expectedLocale
+      asyncFallback = fallbackLocale
+      // 重置状态
+      setState({ resourceLoader, asyncData, asyncLocale, asyncFallback, useFallbackTranslate })
+    }
+  } else if (resourceLoader || asyncData || useFallbackTranslate) {
+    // 异步数据源切换成了同步数据源
+    useFallbackTranslate = false
+    setState({ ...state, resourceLoader: null, asyncData: null, useFallbackTranslate: false })
+  }
+
+  // fallbackTranslate是为了解决切换语言时，等待加载数据期间，屏幕会“闪白”的问题
+  const fallbackTranslateRef = useRef<TranslateFunction | null>(null)
+
+  //
+  const translate = useTranslate(
+    {
+      data: isAsyncResources ? asyncData : definitions || null,
+      locale: expectedLocale,
+      fallback: fallbackLocale,
+      plugins,
+    },
+    useFallbackTranslate ? fallbackTranslateRef.current : null
+  )
+  fallbackTranslateRef.current = translate
 
   useEffect(() => {
-    if (typeof definitions === 'function') {
-      // 异步更新语言数据
-      fetchLocaleData(expectedLocale, fallbackLocale, definitions).then((data) => {
-        if (expectedLocale === getGlobalLocale()) {
-          setData(data)
-          setLocale(expectedLocale)
-        }
-      })
-    } else {
-      // 同步更新
-      setData(definitions || null)
-      setLocale(expectedLocale)
+    if (typeof definitions !== 'function') {
+      fallbackTranslateRef.current = null
+      return
     }
+    // 加载并更新语言数据
+    fetchLocaleData(expectedLocale, fallbackLocale, definitions).then(
+      (data) => {
+        // 数据加载成功
+        setState((prevState) => {
+          if (
+            prevState.asyncLocale === expectedLocale &&
+            prevState.asyncFallback === fallbackLocale &&
+            prevState.resourceLoader === definitions
+          ) {
+            // 清除备选translate，使得重新生成新的translate
+            fallbackTranslateRef.current = null
+            return { ...prevState, asyncData: data, useFallbackTranslate: false }
+          }
+          // 加载数据期间，又切换了语言，当次更新作废，返回“前一个”状态
+          return prevState
+        })
+      },
+      // 数据加载失败
+      () => {
+        setState((prevState) => {
+          if (
+            prevState.asyncLocale === expectedLocale &&
+            prevState.asyncFallback === fallbackLocale &&
+            prevState.resourceLoader === definitions
+          ) {
+            // 更新组件，并生成返回空字符串的translate
+            fallbackTranslateRef.current = null
+            return { ...prevState, asyncData: null, useFallbackTranslate: false }
+          }
+          return prevState
+        })
+      }
+    )
   }, [definitions, expectedLocale, fallbackLocale])
 
   return [translate, expectedLocale, setContextLocale]

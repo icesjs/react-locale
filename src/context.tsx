@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { useEffect, useState } from 'react'
 import { determineLocale, normalizeLocale } from './utils'
+import { MessageDefinitions } from './message'
 
 // 备选语言
 let fallbackLocale: string = 'zh'
@@ -15,14 +16,31 @@ const unregisterProp = '__localeChangeUnregister'
 
 let listenerId = 1
 
-interface ListenerFunction {
+interface LocaleChangeHandler {
   (arg: string): void
 
   [unregisterProp]?: (() => void) | null
 }
 
+interface LocaleLoadListener {
+  (locale: string, fallbackLocale: string, error?: Error): void
+
+  [unregisterProp]?: (() => void) | null
+}
+
+type ListenerMap = { [p: string]: LocaleChangeHandler | LocaleLoadListener }
+type LoadStatus = 'prepared' | 'loading' | 'finished' | 'failed'
+
 // 当前已订阅区域语言变化的监听
-const listeners: { [p: string]: ListenerFunction } = {}
+const localeChangeListeners: { [p: string]: LocaleChangeHandler } = Object.create(null)
+// 语言文件加载失败时的监听函数
+const loadErrorListeners: { [p: string]: LocaleLoadListener } = Object.create(null)
+// 语言文件加载完成时的监听函数
+const loadFinishListeners: { [p: string]: LocaleLoadListener } = Object.create(null)
+// 语言文件开始加载时的监听函数
+const loadStartListeners: { [p: string]: LocaleLoadListener } = Object.create(null)
+// 加载状态标记
+const localeLoadStatus: { [p: string]: LoadStatus } = Object.create(null)
 
 // 调试信息配置对象
 export const debugMessageFilter = {
@@ -85,6 +103,13 @@ export function setFallbackLocale(locale: string) {
 }
 
 /**
+ * 获取加载状态键值。
+ */
+function getLocaleLoadKey(locale: string, fallback: string) {
+  return `${locale}$$${fallback}`
+}
+
+/**
  * 设置当前生效的区域语言。
  * @param locale 待设定的区域语言代码。
  */
@@ -96,25 +121,25 @@ export function setLocale(locale: string) {
   // 校验值有效性
   validateLocale(localeCode, false, locale)
   //
-  try {
-    isUpdating = true
-    currentLocale = localeCode
-    for (const handle of Object.values(listeners)) {
-      handle(localeCode)
+  isUpdating = true
+  currentLocale = localeCode
+  // 重置加载状态
+  localeLoadStatus[getLocaleLoadKey(currentLocale, fallbackLocale)] = 'prepared'
+  //
+  for (const handle of Object.values(localeChangeListeners)) {
+    try {
+      handle(currentLocale)
+    } catch (e) {
+      console.error(e)
     }
-  } catch (e) {
-    throw e
-  } finally {
-    isUpdating = false
   }
+  isUpdating = false
 }
 
-/**
- * 订阅全局区域语言变化事件。
- * @param handle 监听处理函数。
- * @return 返回取消订阅的函数。
- */
-export function subscribe(handle: ListenerFunction) {
+function registerListener(
+  listeners: ListenerMap,
+  handle: LocaleChangeHandler | LocaleLoadListener
+) {
   if (typeof handle !== 'function') {
     throw new Error('Handle is not a function')
   }
@@ -132,6 +157,114 @@ export function subscribe(handle: ListenerFunction) {
     listeners[id] = handle
   }
   return unregister
+}
+
+/**
+ * 订阅全局区域语言变化事件。
+ * @param handler 监听处理函数。
+ * @return 返回取消订阅的函数。
+ */
+export function subscribe(handler: LocaleChangeHandler) {
+  return registerListener(localeChangeListeners, handler)
+}
+
+/**
+ * 订阅语言文件加载错误事件。
+ * @param listener 监听处理函数。
+ * @return 返回取消订阅的函数。
+ */
+export function addLoadErrorListener(listener: LocaleLoadListener) {
+  return registerListener(loadErrorListeners, listener)
+}
+
+/**
+ * 订阅语言文件开始加载事件。
+ * @param listener 监听处理函数。
+ * @return 返回取消订阅的函数。
+ */
+export function addLoadStartListener(listener: LocaleLoadListener) {
+  return registerListener(loadStartListeners, listener)
+}
+
+/**
+ * 订阅语言文件加载完成事件。成功或失败都会调此监听。
+ * @param listener 监听处理函数。
+ * @return 返回取消订阅的函数。
+ */
+export function addLoadFinishListener(listener: LocaleLoadListener) {
+  return registerListener(loadFinishListeners, listener)
+}
+
+/**
+ * 发布加载事件。
+ */
+function emitLoadEvent(
+  listeners: ListenerMap,
+  status: LoadStatus,
+  locale: string,
+  fallback: string,
+  error?: Error
+) {
+  const key = getLocaleLoadKey(locale, fallback)
+  if (localeLoadStatus[key] === status) {
+    return
+  }
+  localeLoadStatus[key] = status
+  for (const handle of Object.values(listeners)) {
+    try {
+      handle(locale, fallback, error)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+}
+
+/**
+ * 发布语言加载错误事件。
+ */
+function emitLoadError(locale: string, fallback: string, error: Error) {
+  if (localeLoadStatus[getLocaleLoadKey(locale, fallback)] === 'finished') {
+    emitLoadEvent(loadErrorListeners, 'failed', locale, fallback, error)
+  }
+}
+
+/**
+ * 发布语言加载开始事件。
+ */
+function emitLoadStart(locale: string, fallback: string) {
+  if (localeLoadStatus[getLocaleLoadKey(locale, fallback)] === 'prepared') {
+    emitLoadEvent(loadStartListeners, 'loading', locale, fallback)
+  }
+}
+
+/**
+ * 发布语言加载完成事件。
+ */
+function emitLoadFinish(locale: string, fallback: string) {
+  if (localeLoadStatus[getLocaleLoadKey(locale, fallback)] === 'loading') {
+    emitLoadEvent(loadFinishListeners, 'finished', locale, fallback)
+  }
+}
+
+/**
+ * 语言资源加载函数。
+ */
+export type LocaleResourceLoader = (locale: string) => Promise<MessageDefinitions>
+
+// 加载异步数据
+export function fetchLocaleData(locale: string, fallback: string, fetch: LocaleResourceLoader) {
+  emitLoadStart(locale, fallback)
+  return Promise.all([fetch(locale), fetch(fallback)]).then(
+    (res) => {
+      emitLoadFinish(locale, fallback)
+      return Object.assign({}, res[1], res[0])
+    },
+    (err) => {
+      emitLoadFinish(locale, fallback)
+      emitLoadError(locale, fallback, err)
+      throw err
+    }
+  )
 }
 
 /**

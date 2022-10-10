@@ -1,8 +1,8 @@
 import * as React from 'react'
 import { HTMLAttributes } from 'react'
-import { LocaleResourceLoader, useContextLocaleTrans, useLocaleTrans } from './hooks'
+import { LocaleContext, LocaleResourceLoader } from './context'
+import { useContextLocaleTrans, useLocaleTrans } from './hooks'
 import { MessageDefinitions, PluginFunction } from './message'
-import { LocaleContext } from './context'
 
 type HTMLTagName = keyof HTMLElementTagNameMap
 

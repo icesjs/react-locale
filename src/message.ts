@@ -28,6 +28,19 @@ export type PluginFunction = (
 ) => MessageValue
 
 /**
+ * 提供给用户使用的转译函数。
+ */
+export interface TranslateFunction {
+  (key: string, ...pluginArgs: any[]): string
+
+  // 与当前translate绑定的语言
+  __boundLocale?: string
+  __fallbackLocale?: string
+  // 标记为待作废的转译函数，在切换语言过渡期间使用。
+  __toBeInvalidTranslateFunction?: boolean
+}
+
+/**
  * 插件使用的转译函数，可供插件获取语言模块消息内容。
  */
 export type PluginTranslate = ReturnType<typeof getPluginTranslate>
@@ -135,11 +148,13 @@ function printErrorMessage(key: string, locale: string) {
  * @param key
  * @param pluginArgs
  * @param context
+ * @param silent
  */
 export function getLocaleMessage(
   key: string,
   pluginArgs: any[],
-  context: ReturnType<typeof getTranslateContext>
+  context: ReturnType<typeof getTranslateContext>,
+  silent?: boolean
 ): string | never {
   const { locale, fallback, plugins, dataList } = context
   if (!key) {
@@ -159,7 +174,7 @@ export function getLocaleMessage(
     toMessageValue(messageDataValue)
   )
 
-  if (value === '' || value === undefined) {
+  if (!silent && (value === '' || value === undefined)) {
     return printErrorMessage(key, locale)
   }
 
@@ -211,6 +226,7 @@ function getTranslateContext(
  * 绑定语言定义，并根据提供的上下文获取转译函数。
  * @param data 需要绑定的语言定义数据。
  * @param context 需要绑定的上下文对象。
+ * @param fallbackTranslate 备用的translate，在加载数据时，避免出现闪白，先用之前的translate处理文本。
  */
 export function withDefinitions(
   data: MessageDefinitions | null,
@@ -218,15 +234,26 @@ export function withDefinitions(
     locale: string
     fallback?: string
     plugins?: PluginFunction | PluginFunction[] | null
-  }
-) {
+  },
+  fallbackTranslate?: TranslateFunction | null
+): TranslateFunction {
   if (data === null) {
-    // 数据还未加载，返回空字符串的转译函数。
-    return () => ''
+    if (fallbackTranslate) {
+      fallbackTranslate.__toBeInvalidTranslateFunction = true
+    }
+    return fallbackTranslate || (() => '')
   }
   const translateContext = getTranslateContext(data, context)
   // 返回转译函数
-  return function translate(key: string, ...pluginArgs: any[]) {
-    return getLocaleMessage(key, pluginArgs, translateContext)
+  const translate: TranslateFunction = function (key: string, ...pluginArgs: any[]) {
+    return getLocaleMessage(
+      key,
+      pluginArgs,
+      translateContext,
+      translate.__toBeInvalidTranslateFunction
+    )
   }
+  translate.__boundLocale = translateContext.locale
+  translate.__fallbackLocale = translateContext.fallback
+  return translate
 }
